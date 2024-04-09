@@ -33,7 +33,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
 
   return (
     <div class="min-h-screen bg-gray-50 flex flex-col text-gray-700">
-      <nav class="sticky top-0 left-0 right-0 z-20 bg-white w-full flex items-center justify-between h-[70px] shadow-sm px-5">
+      <nav class="sticky top-0 left-0 right-0 z-20 bg-white w-full flex items-center justify-between h-[70px] shadow px-5">
         <div class="text-xl font-medium uppercase">
           <span class="text-primary">Ferm</span>onitor
         </div>
@@ -42,14 +42,14 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
         </A>
       </nav>
       <div class="grow relative">
-        <div class="absolute top-0 left-0 lg:block hidden w-72 bg-white shadow-sm h-full px-8">
+        <div class="absolute top-0 left-0 lg:block hidden w-72 bg-white shadow h-full px-8">
           <div class="mt-10">
             <For each={menus}>
               {(item) => (
                 <A
                   href={item.path}
                   class={
-                    "flex mb-3 items-center transition " +
+                    "flex mb-5 items-center transition " +
                     (location.pathname == item.path ? "text-primary" : "")
                   }
                 >
