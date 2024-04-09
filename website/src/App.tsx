@@ -42,7 +42,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
         </A>
       </nav>
       <div class="grow relative">
-        <div class="absolute top-0 left-0 w-72 bg-white shadow-sm h-full px-8">
+        <div class="absolute top-0 left-0 lg:block hidden w-72 bg-white shadow-sm h-full px-8">
           <div class="mt-10">
             <For each={menus}>
               {(item) => (
@@ -60,7 +60,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
             </For>
           </div>
         </div>
-        <div class="p-5 lg:ml-72">{props.children}</div>
+        <div class="p-5 lg:ml-72 transition">{props.children}</div>
       </div>
     </div>
   );
