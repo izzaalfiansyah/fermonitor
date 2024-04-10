@@ -4,6 +4,10 @@ export default function () {
   return (
     <div class="space-y-5">
       <div class="bg-white rounded p-5 shadow">
+        <div class="text-xl">Histori</div>
+        <p class="text-sm">
+          Menampilkan hasil fermentasi yang telah dilakukan.
+        </p>
         <Table
           headers={["Tanggal", "Lama Fermentasi", "Rentang Suhu", "Status"]}
           items={[

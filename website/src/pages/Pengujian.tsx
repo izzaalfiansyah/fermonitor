@@ -9,6 +9,11 @@ export default function () {
         gagal.
       </div>
       <div class="bg-white rounded shadow p-5">
+        <div class="text-xl">Analisis Data</div>
+        <p class="text-sm">
+          Menampilkan perubahan kandungan dari proses fermentasi selama 6 jam
+          sekali.
+        </p>
         <Table
           class="my-5"
           headers={["Tanggal", "Jam", "Kadar Gas", "Suhu", "Kelembaban"]}
