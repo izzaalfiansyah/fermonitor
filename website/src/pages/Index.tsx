@@ -83,7 +83,7 @@ export default function () {
   return (
     <div class="space-y-5">
       <div class="flex flex-wrap gap-5">
-        <div class="bg-pink-500 lg:w-1/2 w-full h-52 rounded shadow text-white flex items-center justify-center">
+        <div class="bg-red-500 lg:w-1/2 w-full h-52 rounded shadow text-white flex items-center justify-center">
           <div class="uppercase text-3xl">belum matang</div>
         </div>
         <div class="grid grid-cols-2 grow gap-5 ">
