@@ -10,7 +10,9 @@ export default function (props: TableProps) {
 
   return (
     <div class="overflow-x-auto">
-      <table class={"border-collapse w-full " + otherProps.class}>
+      <table
+        class={"border-collapse w-full whitespace-nowrap " + otherProps.class}
+      >
         <thead>
           <tr>
             <For each={props.headers}>
