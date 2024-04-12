@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@solidjs/router": "^0.13.1",
+    "@supabase/supabase-js": "^2.42.3",
     "solid-js": "^1.8.15"
   },
   "devDependencies": {

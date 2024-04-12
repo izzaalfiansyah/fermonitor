@@ -72,7 +72,7 @@ export default function () {
       chart()?.update();
     }
 
-    setTimeout(renderChart, 1000 * 60);
+    setTimeout(renderChart, 1000);
   };
 
   onMount(() => {
