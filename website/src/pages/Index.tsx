@@ -2,26 +2,58 @@ import { createSignal, onMount } from "solid-js";
 import BeakerIcon from "../icons/BeakerIcon";
 import EyeDropperIcon from "../icons/EyeDropperIcon";
 import { Chart, registerables } from "chart.js";
+import supabase from "../utils/supabase";
+import { getTimes } from "../utils/dates";
 
 export default function () {
   let canvas: any;
   const [chart, setChart] = createSignal<Chart | null>(null);
+  const [suhu, setSuhu] = createSignal<number>(0);
+  const [kelembaban, setKelembaban] = createSignal<number>(0);
+  const [kadarGas, setKadarGas] = createSignal<number[]>([]);
+  const [timeStamps, setTimeStamps] = createSignal<any[]>([]);
 
-  const renderChart = () => {
-    const date = new Date();
-    const his =
-      date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
-    const val = Math.round(Math.random() * 30);
+  const getData = async () => {
+    const { data } = await supabase
+      .from("kondisi_tapai")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(10);
 
-    let labels = [his];
-    let data = [val];
+    if (data != null) {
+      const lastItem = data[0];
+
+      setSuhu(lastItem.suhu);
+      setKelembaban(lastItem.kelembaban);
+      setKadarGas([]);
+      setTimeStamps([]);
+
+      data.forEach((item) => {
+        setKadarGas((val) => {
+          val.push(item.kadar_gas);
+          return val;
+        });
+
+        setTimeStamps((val) => {
+          val.push(getTimes(item.created_at));
+          return val;
+        });
+      });
+    }
+  };
+
+  const renderChart = async () => {
+    await getData();
+
+    let labels = timeStamps();
+    let datas = kadarGas();
 
     while (labels.length < 10) {
       labels.push("-");
     }
 
-    while (data.length < 10) {
-      data.push(0);
+    while (datas.length < 10) {
+      datas.push(0);
     }
 
     if (!chart()) {
@@ -32,7 +64,7 @@ export default function () {
           datasets: [
             {
               label: "Kadar Gas",
-              data: data.reverse(),
+              data: datas.reverse(),
               borderColor: "#4784f5",
               fill: true,
               cubicInterpolationMode: "monotone",
@@ -55,8 +87,8 @@ export default function () {
                 display: true,
                 text: "Nilai",
               },
-              suggestedMin: 0,
-              suggestedMax: 50,
+              min: 0,
+              max: 50,
             },
           },
         },
@@ -65,17 +97,20 @@ export default function () {
       setChart(myChart);
     } else {
       chart()?.data.labels?.splice(0, 1);
-      chart()?.data.labels?.push(his);
       chart()?.data.datasets[0].data.splice(0, 1);
-      chart()?.data.datasets[0].data.push(val);
+
+      chart()?.data.labels?.push(getTimes());
+      chart()?.data.datasets[0].data.push(kadarGas()[0]);
 
       chart()?.update();
     }
 
-    setTimeout(renderChart, 1000);
+    setTimeout(async () => {
+      await renderChart();
+    }, 1000);
   };
 
-  onMount(() => {
+  onMount(async () => {
     Chart.register(...registerables);
     renderChart();
   });
@@ -89,11 +124,11 @@ export default function () {
         <div class="grid grid-cols-2 grow gap-5 ">
           <div class="bg-white rounded shadow min-h-24 flex flex-col items-center justify-center py-8">
             <EyeDropperIcon class="w-12 h-12 inline-block" />
-            <div class="text-3xl mt-5">30 °C</div>
+            <div class="text-3xl mt-5">{suhu()} °C</div>
           </div>
           <div class="bg-white rounded shadow min-h-24 flex flex-col items-center justify-center py-8">
             <BeakerIcon class="w-12 h-12 inline-block" />
-            <div class="text-3xl mt-5">70 %</div>
+            <div class="text-3xl mt-5">{kelembaban()} %</div>
           </div>
         </div>
       </div>
