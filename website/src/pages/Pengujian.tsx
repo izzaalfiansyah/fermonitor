@@ -1,6 +1,28 @@
+import { createSignal, onMount } from "solid-js";
 import Table from "../components/Table";
+import supabase from "../utils/supabase";
+import { KondisiTapai } from "../types/KondisiTapai";
+import { getDates, getTimes } from "../utils/dates";
 
 export default function () {
+  const [items, setItems] = createSignal<KondisiTapai[]>([]);
+
+  const getData = async () => {
+    const { data } = await supabase
+      .from("kondisi_tapai")
+      .select("*")
+      .eq("pengujian", true)
+      .order("created_at", { ascending: false });
+
+    setItems(data as KondisiTapai[]);
+
+    console.log(items());
+  };
+
+  onMount(async () => {
+    await getData();
+  });
+
   return (
     <div class="space-y-5">
       <div class="bg-white rounded shadow p-5">
@@ -17,12 +39,13 @@ export default function () {
         <Table
           class="my-5"
           headers={["Tanggal", "Jam", "Kadar Gas", "Suhu", "Kelembaban"]}
-          items={[
-            ["23 Maret 2024", "08:00", "20%", "35 C", "50%"],
-            ["23 Maret 2024", "14:00", "23%", "35 C", "60%"],
-            ["23 Maret 2024", "20:00", "23%", "35 C", "65%"],
-            ["24 Maret 2024", "02:00", "23%", "35 C", "65%"],
-          ]}
+          items={items().map((item) => [
+            getDates(item.created_at),
+            getTimes(item.created_at).slice(0, 5),
+            item.kadar_gas + "%",
+            item.suhu + " C",
+            item.kelembaban + "%",
+          ])}
         ></Table>
       </div>
     </div>
