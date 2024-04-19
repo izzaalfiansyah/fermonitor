@@ -1,4 +1,4 @@
-import { createSignal, onMount } from "solid-js";
+import { createSignal, onMount, Show } from "solid-js";
 import BeakerIcon from "../icons/BeakerIcon";
 import EyeDropperIcon from "../icons/EyeDropperIcon";
 import { Chart, registerables } from "chart.js";
@@ -20,7 +20,7 @@ export default function () {
       .order("created_at", { ascending: false })
       .limit(10);
 
-    if (data != null) {
+    if (data != null && data.length > 0) {
       const lastItem = data[0];
 
       setSuhu(lastItem.suhu);
@@ -117,24 +117,36 @@ export default function () {
 
   return (
     <div class="space-y-5">
-      <div class="flex flex-wrap gap-5">
-        <div class="bg-red-500 lg:w-1/2 w-full h-52 rounded shadow text-white flex items-center justify-center">
-          <div class="uppercase text-3xl">belum matang</div>
+      <Show when={!kadarGas()}>
+        <div class="bg-white rounded p-5 shadow">Data tidak terdeteksi</div>
+        <div class="bg-white rounded p-5 shadow flex items-center justify-center">
+          <img
+            src="https://www.islandofworldpeace.ie/wp-content/uploads/2019/03/no-image.jpg"
+            alt=""
+            class="w-[300px] h-[300px]"
+          />
         </div>
-        <div class="grid grid-cols-2 grow gap-5 ">
-          <div class="bg-white rounded shadow min-h-24 flex flex-col items-center justify-center py-8">
-            <EyeDropperIcon class="w-12 h-12 inline-block" />
-            <div class="text-3xl mt-5">{suhu()} °C</div>
+      </Show>
+      <div class={"space-y-5" + (kadarGas().length > 0 ? "" : "hidden")}>
+        <div class="flex flex-wrap gap-5">
+          <div class="bg-red-500 lg:w-1/2 w-full h-52 rounded shadow text-white flex items-center justify-center">
+            <div class="uppercase text-3xl">belum matang</div>
           </div>
-          <div class="bg-white rounded shadow min-h-24 flex flex-col items-center justify-center py-8">
-            <BeakerIcon class="w-12 h-12 inline-block" />
-            <div class="text-3xl mt-5">{kelembaban()} %</div>
+          <div class="grid grid-cols-2 grow gap-5 ">
+            <div class="bg-white rounded shadow min-h-24 flex flex-col items-center justify-center py-8">
+              <EyeDropperIcon class="w-12 h-12 inline-block" />
+              <div class="text-3xl mt-5">{suhu()} °C</div>
+            </div>
+            <div class="bg-white rounded shadow min-h-24 flex flex-col items-center justify-center py-8">
+              <BeakerIcon class="w-12 h-12 inline-block" />
+              <div class="text-3xl mt-5">{kelembaban()} %</div>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="bg-white rounded shadow p-5">
-        <div class="text-xl">Grafik Kadar Gas</div>
-        <canvas ref={canvas}></canvas>
+        <div class="bg-white rounded shadow p-5">
+          <div class="text-xl">Grafik Kadar Gas</div>
+          <canvas ref={canvas}></canvas>
+        </div>
       </div>
     </div>
   );
