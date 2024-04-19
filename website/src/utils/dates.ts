@@ -20,3 +20,12 @@ export function getDates(date: any = null) {
 
     return dates.getDate() + ' ' + month + ' ' + year;
 }
+
+export function getTimeDiff(firstDate: string, lastDate: string) {
+    const date_awal = new Date(firstDate);
+    const date_akhir = new Date(lastDate);
+
+    const date_diff = date_akhir.getTime() - date_awal.getTime();
+    
+    return date_diff;
+}

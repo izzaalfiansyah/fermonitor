@@ -1,6 +1,26 @@
+import { createSignal, onMount } from "solid-js";
 import Table from "../components/Table";
+import { Histori } from "../types/Histori";
+import supabase from "../utils/supabase";
+import { getDates, getTimeDiff } from "../utils/dates";
 
 export default function () {
+  const [items, setItems] = createSignal<Histori[]>([]);
+
+  const getData = async () => {
+    const { data } = await supabase
+      .from("histori_fermentasi")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .range(0, 10);
+
+    setItems(data as Histori[]);
+  };
+
+  onMount(async () => {
+    await getData();
+  });
+
   return (
     <div class="space-y-5">
       <div class="bg-white rounded p-5 shadow">
@@ -10,32 +30,20 @@ export default function () {
         </p>
         <Table
           headers={["Tanggal", "Lama Fermentasi", "Rentang Suhu", "Status"]}
-          items={[
-            [
-              "24 Maret 2024",
-              "32 Jam",
-              "35 - 40 C",
-              <span class="uppercase text-green-500">SUKSES</span>,
-            ],
-            [
-              "23 Maret 2024",
-              "6 Jam",
-              "25- 35 C",
-              <span class="uppercase text-red-500">GAGAL</span>,
-            ],
-            [
-              "22 Maret 2024",
-              "24 Jam",
-              "30 - 40 C",
-              <span class="uppercase text-green-500">SUKSES</span>,
-            ],
-            [
-              "24 Maret 2024",
-              "24 Jam",
-              "30 - 40 C",
-              <span class="uppercase text-green-500">SUKSES</span>,
-            ],
-          ]}
+          items={items().map((item) => [
+            getDates(item.created_at),
+            Math.round(
+              getTimeDiff(item.waktu_awal, item.waktu_akhir) / (1000 * 60 * 60)
+            ) + " Jam",
+            item.rentang_suhu + " C",
+            <span
+              class={
+                "uppercase " + item.berhasil ? "text-green-500" : "text-red-500"
+              }
+            >
+              {item.berhasil ? "SUKSES" : "GAGAL"}
+            </span>,
+          ])}
           class="my-5"
         ></Table>
       </div>
