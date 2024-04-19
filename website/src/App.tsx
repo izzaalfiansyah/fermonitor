@@ -1,13 +1,13 @@
 import { A, useLocation } from "@solidjs/router";
-import { For, JSX } from "solid-js";
+import { createSignal, For, JSX, Match, onMount, Switch } from "solid-js";
 import SettingIcon from "./icons/SettingIcon";
 import HomeIcon from "./icons/HomeIcon";
 import ArchiveIcon from "./icons/ArchiveIcon";
 import ClockIcon from "./icons/ClockIcon";
+import supabase from "./utils/supabase";
+import { Histori } from "./types/Histori";
 
 export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
-  const location = useLocation();
-
   const menus = [
     {
       path: "/",
@@ -30,6 +30,56 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
       icon: SettingIcon,
     },
   ];
+
+  const [lastHistori, setLastHistori] = createSignal<Histori | null>(null);
+
+  const location = useLocation();
+
+  const getLastHistori = async () => {
+    const { data } = await supabase
+      .from("histori_fermentasi")
+      .select("*")
+      .limit(1)
+      .eq("selesai", false)
+      .order("created_at", { ascending: false });
+
+    if (!!data) {
+      setLastHistori(data[0]);
+    }
+  };
+
+  const deleteAllData = async () => {
+    await supabase.from("kondisi_tapai").delete().neq("id", "0");
+
+    setLastHistori(null);
+
+    window.alert("Aksi berhasil dilakukan");
+    window.location.reload();
+  };
+
+  const saveHistori = async () => {
+    await supabase
+      .from("histori_fermentasi")
+      .update({
+        selesai: true,
+      })
+      .eq("id", lastHistori()?.id);
+
+    await deleteAllData();
+  };
+
+  const noSaveHistori = async () => {
+    await supabase
+      .from("histori_fermentasi")
+      .delete()
+      .eq("id", lastHistori()?.id);
+
+    await deleteAllData();
+  };
+
+  onMount(async () => {
+    await getLastHistori();
+  });
 
   return (
     <div class="min-h-screen bg-gray-50 flex flex-col text-gray-700">
@@ -62,6 +112,46 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
         </div>
         <div class="p-5 lg:ml-72 transition">{props.children}</div>
       </div>
+
+      <Switch>
+        <Match when={!!lastHistori()}>
+          <div class="bg-black bg-opacity-25 fixed top-0 left-0 right-0 bottom-0 z-[500] flex items-center justify-center p-5">
+            <div class="bg-white rounded shadow p-5 w-full lg:w-1/2">
+              <div class="text-xl mb-5">Pemberitahuan</div>
+              Fermentasi tapai telah dilakukan dengan hasil{" "}
+              <strong class="uppercase">
+                {lastHistori()?.berhasil ? "sukses" : "gagal"}
+              </strong>
+              . Sistem akan melakukan beberapa aksi yaitu:
+              <ul class="list list-disc pl-4 my-2">
+                <li>
+                  menghapus data-data terkait dengan proses fermentasi yang
+                  telah dilakukan.
+                </li>
+                <li>
+                  data-data yang dihapus termasuk suhu, kelembaban, dan kadar
+                  gas selama fermentasi.
+                </li>
+              </ul>
+              Simpan hasil fermentasi ke histori?
+              <div class="mt-8 flex space-x-3 justify-end">
+                <button
+                  class="bg-gray-400 text-white px-5 py-2 uppercase rounded"
+                  onClick={noSaveHistori}
+                >
+                  Tutup
+                </button>
+                <button
+                  class="bg-red-400 text-white px-5 py-2 uppercase rounded"
+                  onClick={saveHistori}
+                >
+                  Simpan
+                </button>
+              </div>
+            </div>
+          </div>
+        </Match>
+      </Switch>
     </div>
   );
 }
