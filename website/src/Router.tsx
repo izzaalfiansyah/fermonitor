@@ -1,4 +1,4 @@
-import { Route, Router } from "@solidjs/router";
+import { HashRouter, Route } from "@solidjs/router";
 import Index from "./pages/Index";
 import Pengujian from "./pages/Pengujian";
 import Histori from "./pages/Histori";
@@ -10,11 +10,11 @@ interface Props {
 
 export default function (props: Props) {
   return (
-    <Router root={props.root}>
+    <HashRouter root={props.root}>
       <Route path="/" component={Index}></Route>
       <Route path="/pengujian" component={Pengujian}></Route>
       <Route path="/histori" component={Histori}></Route>
       <Route path="/pengaturan" component={Pengaturan}></Route>
-    </Router>
+    </HashRouter>
   );
 }
