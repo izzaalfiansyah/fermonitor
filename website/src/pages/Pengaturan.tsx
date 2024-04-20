@@ -1,6 +1,38 @@
+import { createSignal, onMount } from "solid-js";
+import supabase from "../utils/supabase";
+import { Pengaturan } from "../types/Pengaturan";
+
 export default function () {
+  const [req, setReq] = createSignal<Pengaturan>();
+
+  const getData = async () => {
+    const { data } = await supabase.from("pengaturan").select("*").eq("id", 1);
+
+    if (!!data) {
+      setReq(data[0]);
+    }
+  };
+
+  const handleReqChange = (key: keyof Pengaturan, value: any) => {
+    setReq((val) => {
+      (val as any)[key] = value;
+      return val;
+    });
+  };
+
+  const handleSubmit = async (e: SubmitEvent) => {
+    e.preventDefault();
+    await supabase.from("pengaturan").update(req()).eq("id", 1);
+
+    alert("data berhasil disimpan");
+  };
+
+  onMount(async () => {
+    await getData();
+  });
+
   return (
-    <div class="bg-white rounded p-5 shadow">
+    <form class="bg-white rounded p-5 shadow" onSubmit={handleSubmit}>
       <div class="text-xl">Kontak Pemilik</div>
       <p class="text-sm">
         Kontak digunakan untuk mengirimkan notifikasi sistem kepada pemilik.
@@ -8,7 +40,13 @@ export default function () {
       <div class="my-5">
         <div class="mb-3">
           <div class="mb-1">Email</div>
-          <input type="text" class="input" placeholder="Masukkan Email" />
+          <input
+            type="text"
+            class="input"
+            placeholder="Masukkan Email"
+            value={req()?.email}
+            onInput={(e) => handleReqChange("email", e.target.value)}
+          />
         </div>
         <div class="mb-3">
           <div class="mb-1">No. Whatsapp</div>
@@ -16,6 +54,8 @@ export default function () {
             type="text"
             class="input"
             placeholder="Masukkan No. Whatsapp"
+            value={req()?.telepon}
+            onInput={(e) => handleReqChange("telepon", e.target.value)}
           />
         </div>
       </div>
@@ -30,19 +70,34 @@ export default function () {
           <div class="grid grid-cols-2 gap-4">
             <div>
               <div class="mb-1">Suhu Min</div>
-              <input type="text" class="input" value={30} />
+              <input
+                type="number"
+                min={0}
+                class="input"
+                value={req()?.suhu_min}
+                onInput={(e) => handleReqChange("suhu_min", e.target.value)}
+              />
             </div>
             <div>
               <div class="mb-1">Suhu Max</div>
-              <input type="text" class="input" value={40} />
+              <input
+                type="number"
+                max={100}
+                class="input"
+                value={req()?.suhu_max}
+                onInput={(e) => handleReqChange("suhu_max", e.target.value)}
+              />
             </div>
           </div>
         </div>
       </div>
       <div class="h-8"></div>
-      <button class="bg-blue-500 transition focus:bg-blue-400 text-white rounded shadow-sm uppercase p-3 px-6 w-full">
+      <button
+        class="bg-blue-500 transition focus:bg-blue-400 text-white rounded shadow-sm uppercase p-3 px-6 w-full"
+        type="submit"
+      >
         Simpan
       </button>
-    </div>
+    </form>
   );
 }
