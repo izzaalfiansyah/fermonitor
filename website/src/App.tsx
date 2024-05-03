@@ -99,7 +99,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
       alert("Device offline!");
     }
 
-    await checkStatusDevice();
+    // await checkStatusDevice();
   };
 
   onMount(async () => {

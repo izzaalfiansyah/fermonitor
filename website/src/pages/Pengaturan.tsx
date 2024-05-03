@@ -59,7 +59,7 @@ export default function () {
           />
         </div>
       </div>
-      <div class="h-8"></div>
+      {/* <div class="h-8"></div>
       <div class="text-xl">Kontrol Fermentasi</div>
       <p class="text-sm">
         Pemilik bisa mengatur environment untuk pengendalian suhu optimal pada
@@ -90,7 +90,7 @@ export default function () {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
       <div class="h-8"></div>
       <button
         class="bg-blue-500 transition focus:bg-blue-400 text-white rounded shadow-sm uppercase p-3 px-6 w-full"
