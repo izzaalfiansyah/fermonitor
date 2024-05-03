@@ -17,7 +17,7 @@ export default function () {
     const { data } = await supabase
       .from("kondisi_tapai")
       .select("*")
-      .order("created_at", { ascending: false })
+      .order("created_time", { ascending: false })
       .limit(10);
 
     if (data != null && data.length > 0) {
@@ -30,12 +30,12 @@ export default function () {
 
       data.forEach((item) => {
         setKadarGas((val) => {
-          val.push(item.kadar_gas);
+          val.push(item.kadar_gas.toString().slice(0, 4));
           return val;
         });
 
         setTimeStamps((val) => {
-          val.push(getTimes(item.created_at));
+          val.push(getTimes(item.created_time));
           return val;
         });
       });
@@ -88,7 +88,7 @@ export default function () {
                 text: "Nilai",
               },
               min: 0,
-              max: 50,
+              max: 10,
             },
           },
         },
@@ -135,11 +135,15 @@ export default function () {
           <div class="grid grid-cols-2 grow gap-5 ">
             <div class="bg-white rounded shadow min-h-24 flex flex-col items-center justify-center py-8">
               <EyeDropperIcon class="w-12 h-12 inline-block" />
-              <div class="text-3xl mt-5">{suhu()} °C</div>
+              <div class="text-3xl mt-5">
+                {suhu().toString().slice(0, 4)} °C
+              </div>
             </div>
             <div class="bg-white rounded shadow min-h-24 flex flex-col items-center justify-center py-8">
               <BeakerIcon class="w-12 h-12 inline-block" />
-              <div class="text-3xl mt-5">{kelembaban()} %</div>
+              <div class="text-3xl mt-5">
+                {kelembaban().toString().slice(0, 4)} %
+              </div>
             </div>
           </div>
         </div>

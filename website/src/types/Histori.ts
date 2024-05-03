@@ -1,7 +1,7 @@
 export interface Histori {
     id: number;
-    waktu_awal: string;
-    waktu_akhir: string;
+    waktu_awal: number;
+    waktu_akhir: number;
     rentang_suhu: string;
     berhasil: boolean;
     created_at: string;

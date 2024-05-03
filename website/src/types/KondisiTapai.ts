@@ -3,5 +3,5 @@ export interface KondisiTapai {
     suhu: number;
     kelembaban: number;
     kadar_gas: number;
-    created_at: string;
+    created_time: number;
   }

@@ -1,5 +1,5 @@
-export function getTimes(date: any = null) {
-    const dates = !!date ? new Date(date) : new Date();
+export function getTimes(epochtime: any = null) {
+    const dates = !!epochtime ? new Date(epochtime * 1000 - 7000 * 3600) : new Date();
 
     const hour = dates.getHours() < 10 ? '0' + dates.getHours() : dates.getHours();
     const minute = dates.getMinutes() < 10 ? '0' + dates.getMinutes() : dates.getMinutes();
@@ -10,8 +10,8 @@ export function getTimes(date: any = null) {
     return his;
 }
 
-export function getDates(date: any = null) {
-    const dates = !!date ? new Date(date) : new Date();
+export function getDates(epochtime: any = null) {
+    const dates = !!epochtime ? new Date((typeof epochtime == 'number') ? epochtime * 1000 - 7000 * 3600 : epochtime) : new Date();
 
     const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 

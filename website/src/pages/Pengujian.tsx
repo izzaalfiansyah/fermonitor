@@ -12,11 +12,9 @@ export default function () {
       .from("kondisi_tapai")
       .select("*")
       .eq("pengujian", true)
-      .order("created_at", { ascending: false });
+      .order("created_time", { ascending: false });
 
     setItems(data as KondisiTapai[]);
-
-    console.log(items());
   };
 
   onMount(async () => {
@@ -40,11 +38,11 @@ export default function () {
           class="my-5"
           headers={["Tanggal", "Jam", "Kadar Gas", "Suhu", "Kelembaban"]}
           items={items().map((item) => [
-            getDates(item.created_at),
-            getTimes(item.created_at).slice(0, 5),
-            item.kadar_gas + "%",
-            item.suhu + " C",
-            item.kelembaban + "%",
+            getDates(item.created_time),
+            getTimes(item.created_time).slice(0, 5),
+            item.kadar_gas.toString().slice(0, 4) + " %",
+            item.suhu.toString().slice(0, 4) + " C",
+            item.kelembaban.toString().slice(0, 4) + " %",
           ])}
         ></Table>
       </div>

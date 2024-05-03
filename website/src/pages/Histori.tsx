@@ -32,9 +32,7 @@ export default function () {
           headers={["Tanggal", "Lama Fermentasi", "Rentang Suhu", "Status"]}
           items={items().map((item) => [
             getDates(item.created_at),
-            Math.round(
-              getTimeDiff(item.waktu_awal, item.waktu_akhir) / (1000 * 60 * 60)
-            ) + " Jam",
+            Math.round((item.waktu_akhir - item.waktu_awal) / 3600) + " Jam",
             item.rentang_suhu + " C",
             <span
               class={
