@@ -77,8 +77,34 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
     await deleteAllData();
   };
 
+  const checkStatusDevice = async () => {
+    const lastData1: any = await new Promise(async (res, rej) => {
+      const { data } = await supabase
+        .from("kondisi_tapai")
+        .select("created_time")
+        .order("created_time", { ascending: false })
+        .limit(1);
+      setTimeout(() => {
+        res(data);
+      }, 5000);
+    });
+
+    const { data: lastData2 } = await supabase
+      .from("kondisi_tapai")
+      .select("created_time")
+      .order("created_time", { ascending: false })
+      .limit(1);
+
+    if (lastData1![0].created_time == lastData2![0].created_time) {
+      alert("Device offline!");
+    }
+
+    await checkStatusDevice();
+  };
+
   onMount(async () => {
     await getLastHistori();
+    await checkStatusDevice();
   });
 
   return (
