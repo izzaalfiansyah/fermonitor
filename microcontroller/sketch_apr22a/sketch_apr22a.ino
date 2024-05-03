@@ -4,6 +4,8 @@
 #include <WiFi.h>
 #include <Arduino_JSON.h>
 #include <assert.h>
+#include <NTPClient.h>
+#include <WiFiUdp.h>
 
 #define BOARD "ESP-32"
 #define MQPIN 34
@@ -20,10 +22,14 @@
 Supabase db;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 DHT dht(DHTPIN, 22);
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org", 3600 * 7, 60000); // GMT +7
 
 float suhu;
 float kelembaban;
 float persentaseKadarGas;
+bool pengujian;
+JSONVar dataPengujian;
 
 void setup(){
   pinMode(MQPIN, INPUT);
@@ -48,20 +54,29 @@ void setup(){
   // inisialisasi WiFi
   Serial.print("Menghubungkan ke WiFi");
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(100);
-    Serial.print(".");
+
+  delay(20000);
+
+  // menampilkan gagal terhubung ke jaringan pada LCD
+  if (WiFi.status() != WL_CONNECTED) {
+    lcd.setCursor(0, 0);
+    lcd.print("Gagal terhubung");
+    lcd.setCursor(0, 1);
+    lcd.print("ke jaringan!");
   }
-  Serial.println("Berhasil Terhubung!");
+  
+  // inisialisasi waktu
+  timeClient.begin();
 
   // inisialisasi supabase
   db.begin(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  delay(20000);
+  getDataPengujian();
 }
 
 void loop(){
+  timeClient.update();
+
   // mendapatkan nilai kadar gas
   float kadarGas = getKadarGas();
   float kadarGasVoltase = kadarGas / 4095.0 * 3.3;
@@ -108,6 +123,23 @@ void loop(){
     digitalWrite(FANPIN, HIGH);
   }
 
+  // menentukan data masuk ke pengujian atau tidak berdasarkan jarak jam
+  long unsigned epochTimeNow = timeClient.getEpochTime();
+
+  if (dataPengujian.length() > 0) {
+    JSONVar dataPengujianTerakhir = dataPengujian[dataPengujian.length() - 1];
+    int created_time = dataPengujianTerakhir["created_time"];
+
+    int epochTimeDiff = epochTimeNow - created_time;
+    int jam = epochTimeDiff / 3600; // 1 jam = 3600 detik;
+
+    if (jam >= 6) {
+      pengujian = true;
+    } else {
+      pengujian = false;
+    }
+  }
+
   // debugging menampilkan data pada serial
   Serial.println("Voltase Kadar Gas : " + String(kadarGasVoltase));
   Serial.println("Persentase Kadar Gas : " + String(persentaseKadarGas) + " %");
@@ -145,13 +177,24 @@ float getPersentaseKadarGas(float voltase) {
 
 // menyimpan kondisi tapai pada database
 void insertKondisiTapai() {
-  JSONVar req;
+  // JSONVar req;
 
-  req["suhu"] = (float) suhu;
-  req["kelembaban"] = (float) kelembaban;
-  req["kadar_gas"] = (float) persentaseKadarGas;
-  req["pengujian"] = false;
+  // req["suhu"] = (float) suhu;
+  // req["kelembaban"] = (float) kelembaban;
+  // req["kadar_gas"] = (float) persentaseKadarGas;
+  // req["pengujian"] = (bool) pengujian;
+  // req["created_time"] = (int) timeClient.getEpochTime();
 
-  String json = JSON.stringify(req);
-  db.insert("kondisi_tapai", json, false);
+  // String json = JSON.stringify(req);
+  // db.insert("kondisi_tapai", json, false);
+  
+  // if (pengujian == true) {
+  //   getDataPengujian();
+  // }
+}
+
+// mengambil data pengujian
+void getDataPengujian() {
+  String json = db.from("kondisi_tapai").select("*").eq("pengujian", "TRUE").order("created_at", "asc", true).doSelect();
+  dataPengujian = JSON.parse(json);
 }
