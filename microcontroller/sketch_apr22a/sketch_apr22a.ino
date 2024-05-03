@@ -12,6 +12,7 @@
 #define DHTPIN 4
 #define LAMPPIN 26
 #define FANPIN 25
+#define BUZZERPIN = 23
 
 #define SUPABASE_URL "https://oxmfbobxmqldgthethlz.supabase.co"
 #define SUPABASE_ANON_KEY "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94bWZib2J4bXFsZGd0aGV0aGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDgwNjQ1NDksImV4cCI6MjAyMzY0MDU0OX0.pTDI9CsiN8wthOWhHjM1dONrRP_Hd7BcbwfKgeKGhtU"
@@ -29,12 +30,14 @@ float suhu;
 float kelembaban;
 float persentaseKadarGas;
 bool pengujian;
+float kadarGasVoltase;
 JSONVar dataPengujian;
 
 void setup(){
   pinMode(MQPIN, INPUT);
   pinMode(LAMPPIN, OUTPUT);
   pinMode(FANPIN, OUTPUT);
+  pinMode(BUZZERPIN, OUTPUT);
 
   digitalWrite(LAMPPIN, HIGH);
   digitalWrite(FANPIN, HIGH);
@@ -79,7 +82,7 @@ void loop(){
 
   // mendapatkan nilai kadar gas
   float kadarGas = getKadarGas();
-  float kadarGasVoltase = kadarGas / 4095.0 * 3.3;
+  kadarGasVoltase = kadarGas / 4095.0 * 3.3;
   persentaseKadarGas = getPersentaseKadarGas(kadarGasVoltase);
   
   // menampilkan kadar gas pada LCD
@@ -140,16 +143,20 @@ void loop(){
     }
   }
 
-  // debugging menampilkan data pada serial
+  getDebugging();
+
+  insertKondisiTapai();
+  cekKematangan();
+
+  delay(2000);
+  lcd.clear();
+}
+
+void getDebugging() {
   Serial.println("Voltase Kadar Gas : " + String(kadarGasVoltase));
   Serial.println("Persentase Kadar Gas : " + String(persentaseKadarGas) + " %");
   Serial.println("Suhu : " + String(suhu) + " C");
   Serial.println("Kelembaban : " + String(kelembaban) + " %");
-
-  insertKondisiTapai();
-
-  delay(2000);
-  lcd.clear();
 }
 
 // mendapatkana nilai rata-rata kadar gas dari 100 data sampel yang diambil
@@ -177,20 +184,49 @@ float getPersentaseKadarGas(float voltase) {
 
 // menyimpan kondisi tapai pada database
 void insertKondisiTapai() {
-  // JSONVar req;
+  JSONVar req;
 
-  // req["suhu"] = (float) suhu;
-  // req["kelembaban"] = (float) kelembaban;
-  // req["kadar_gas"] = (float) persentaseKadarGas;
-  // req["pengujian"] = (bool) pengujian;
-  // req["created_time"] = (int) timeClient.getEpochTime();
+  req["suhu"] = (float) suhu;
+  req["kelembaban"] = (float) kelembaban;
+  req["kadar_gas"] = (float) persentaseKadarGas;
+  req["pengujian"] = (bool) pengujian;
+  req["created_time"] = (int) timeClient.getEpochTime();
 
-  // String json = JSON.stringify(req);
-  // db.insert("kondisi_tapai", json, false);
+  String json = JSON.stringify(req);
+  db.insert("kondisi_tapai", json, false);
   
-  // if (pengujian == true) {
-  //   getDataPengujian();
-  // }
+  if (pengujian == true) {
+    getDataPengujian();
+  }
+}
+
+// melakukan cek kematangan
+void cekKematangan() {
+  if (persentaseKadarGas >= 5.3 && kelembaban >= 93) {
+    String dataAWalJson = db.from("kondisi_tapai").select("*").order("created_at", "asc", true).limit(1).doSelect();
+    String dataAkhirJson = db.from("kondisi_tapai").select("*").order("created_at", "desc", true).limit(1).doSelect();
+
+    JSONVar dataAwal = JSON.parse(dataAwalJson);
+    JSONVar dataAkhir = JSON.parse(dataAkhirJson);
+
+    JSONVar req;
+    req["berhasil"] = true;
+    req["waktu_awal"] = dataAwal[0]["created_time"];
+    req["waktu_akhir"] = dataAkhir[0]["created_time"]
+
+    String json = JSON.stringify(req);
+
+    db.insert("histori_fermentasi", json, false);
+  }
+
+  String dataHistori = db.from("histori_fermentasi").select("*").order("created_at", "desc", true).limit(1).doSelect();
+  JSONVar dataHistoriTerakhir = JSON.parse(dataHistori)[0];
+
+  if (dataHistoriTerakhir["selesai"] == false) {
+    digitalWrite(BUZZERPIN, HIGH);
+  } else {
+    digitalWrite(BUZZERPIN, LOW);
+  }
 }
 
 // mengambil data pengujian
