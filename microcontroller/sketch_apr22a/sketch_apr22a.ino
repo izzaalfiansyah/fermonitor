@@ -1,5 +1,9 @@
+#include <ESP32_Supabase.h>
 #include <LiquidCrystal_I2C.h>
 #include <DHT.h>
+#include <WiFi.h>
+// #include <Arduino_JSON.h>
+// #include <assert.h>
 
 #define BOARD "ESP-32"
 #define MQPIN 34
@@ -7,29 +11,19 @@
 #define LAMPPIN 26
 #define FANPIN 25
 
+#define SUPABASE_URL "https://oxmfbobxmqldgthethlz.supabase.co"
+#define SUPABASE_ANON_KEY "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94bWZib2J4bXFsZGd0aGV0aGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDgwNjQ1NDksImV4cCI6MjAyMzY0MDU0OX0.pTDI9CsiN8wthOWhHjM1dONrRP_Hd7BcbwfKgeKGhtU"
+
+#define WIFI_SSID "Vivo Y21c"
+#define WIFI_PASSWORD "12346789"
+
+Supabase db;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 DHT dht(DHTPIN, 22);
 
-float getKadarGas() {
-  int total = 100;
-  int valueTotal = 0;
-
-  for (int i = 0; i < total; i++) {
-    int value = analogRead(MQPIN);
-    valueTotal = valueTotal + value;
-  }
-
-  float valueAvg = valueTotal / total;
-
-  return valueAvg;
-}
-
-float getPersentaseKadarGas(float voltase) {
-  float persentase = 0.2011 * pow(voltase, 2) + 0.0733 * voltase - 0.0363;
-  float hasil = constrain(persentase * 100, 0, 100);
-
-  return hasil;
-}
+float suhu;
+float kelembaban;
+float persentaseKadarGas;
 
 void setup(){
   pinMode(MQPIN, INPUT);
@@ -41,13 +35,28 @@ void setup(){
 
   Serial.begin(115200);
 
+  // inisialisasi LCD
   lcd.init();
   lcd.backlight();
 
   lcd.setCursor(0, 0);
   lcd.print("Memuat..........");
 
+  // inisialisasi DHT22
   dht.begin();
+
+  // inisialisasi WiFi
+  Serial.print("Menghubungkan ke WiFi");
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(100);
+    Serial.print(".");
+  }
+  Serial.println("Berhasil Terhubung!");
+
+  // inisialisasi supabase
+  db.begin(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   delay(20000);
 }
@@ -55,7 +64,7 @@ void setup(){
 void loop(){
   float kadarGas = getKadarGas();
   float kadarGasVoltase = kadarGas / 4095.0 * 3.3;
-  float persentaseKadarGas = getPersentaseKadarGas(kadarGasVoltase);
+  persentaseKadarGas = getPersentaseKadarGas(kadarGasVoltase);
   
   lcd.clear();
   lcd.setCursor(0, 0);
@@ -66,10 +75,10 @@ void loop(){
   lcd.print(persentaseKadarGas, 1);
   lcd.print(" %");
 
-  delay(1500);
+  delay(2000);
 
-  float suhu = dht.readTemperature();
-  float kelembaban = dht.readHumidity();
+  suhu = dht.readTemperature();
+  kelembaban = dht.readHumidity();
 
   lcd.clear();
   lcd.setCursor(0, 0);
@@ -98,6 +107,39 @@ void loop(){
   Serial.println("Suhu : " + String(suhu) + " C");
   Serial.println("Kelembaban : " + String(kelembaban) + " %");
 
-  delay(1500);
+  // insertKondisiTapai();
+
+  delay(2000);
   lcd.clear();
 }
+
+float getKadarGas() {
+  int total = 100;
+  int valueTotal = 0;
+
+  for (int i = 0; i < total; i++) {
+    int value = analogRead(MQPIN);
+    valueTotal = valueTotal + value;
+  }
+
+  float valueAvg = valueTotal / total;
+
+  return valueAvg;
+}
+
+float getPersentaseKadarGas(float voltase) {
+  float persentase = 0.2043 * pow(voltase, 2) + 0.0611 * voltase - 0.0249;
+  float hasil = constrain(persentase * 100, 0, 100);
+
+  return hasil;
+}
+
+// void insertKondisiTapai() {
+//   req["suhu"] = suhu;
+//   req["kelembaban"] = kelembaban;
+//   req["kadar_gas"] = persentaseKadarGas;
+//   req["pengujian"] = false;
+
+//   String json = JSON.stringify(req);
+//   db.insert("kondisi_tapai", json, false);
+// }
