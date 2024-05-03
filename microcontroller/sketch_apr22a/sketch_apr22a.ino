@@ -2,8 +2,8 @@
 #include <LiquidCrystal_I2C.h>
 #include <DHT.h>
 #include <WiFi.h>
-// #include <Arduino_JSON.h>
-// #include <assert.h>
+#include <Arduino_JSON.h>
+#include <assert.h>
 
 #define BOARD "ESP-32"
 #define MQPIN 34
@@ -62,10 +62,12 @@ void setup(){
 }
 
 void loop(){
+  // mendapatkan nilai kadar gas
   float kadarGas = getKadarGas();
   float kadarGasVoltase = kadarGas / 4095.0 * 3.3;
   persentaseKadarGas = getPersentaseKadarGas(kadarGasVoltase);
   
+  // menampilkan kadar gas pada LCD
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("G : ");
@@ -77,9 +79,11 @@ void loop(){
 
   delay(2000);
 
+  // membaca nilai suhu dan kelembaban
   suhu = dht.readTemperature();
   kelembaban = dht.readHumidity();
 
+  // menampilkan suhu dan kelembaban pada LCD
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("S : ");
@@ -90,29 +94,33 @@ void loop(){
   lcd.print(kelembaban, 1);
   lcd.print(" %");
 
+  // menyalakan lampu jika suhu di bawah 30
   if (suhu <= 30) {
     digitalWrite(LAMPPIN, LOW);
   } else {
     digitalWrite(LAMPPIN, HIGH);
   }
 
+  // menyalakan kipas jika suhu di atas 40
   if (suhu >= 40) {
     digitalWrite(FANPIN, LOW);
   } else {
     digitalWrite(FANPIN, HIGH);
   }
 
+  // debugging menampilkan data pada serial
   Serial.println("Voltase Kadar Gas : " + String(kadarGasVoltase));
   Serial.println("Persentase Kadar Gas : " + String(persentaseKadarGas) + " %");
   Serial.println("Suhu : " + String(suhu) + " C");
   Serial.println("Kelembaban : " + String(kelembaban) + " %");
 
-  // insertKondisiTapai();
+  insertKondisiTapai();
 
   delay(2000);
   lcd.clear();
 }
 
+// mendapatkana nilai rata-rata kadar gas dari 100 data sampel yang diambil
 float getKadarGas() {
   int total = 100;
   int valueTotal = 0;
@@ -127,6 +135,7 @@ float getKadarGas() {
   return valueAvg;
 }
 
+// konversi tegangan ke persen berdasarkan rumus yang telah ditentukan
 float getPersentaseKadarGas(float voltase) {
   float persentase = 0.2043 * pow(voltase, 2) + 0.0611 * voltase - 0.0249;
   float hasil = constrain(persentase * 100, 0, 100);
@@ -134,12 +143,15 @@ float getPersentaseKadarGas(float voltase) {
   return hasil;
 }
 
-// void insertKondisiTapai() {
-//   req["suhu"] = suhu;
-//   req["kelembaban"] = kelembaban;
-//   req["kadar_gas"] = persentaseKadarGas;
-//   req["pengujian"] = false;
+// menyimpan kondisi tapai pada database
+void insertKondisiTapai() {
+  JSONVar req;
 
-//   String json = JSON.stringify(req);
-//   db.insert("kondisi_tapai", json, false);
-// }
+  req["suhu"] = (float) suhu;
+  req["kelembaban"] = (float) kelembaban;
+  req["kadar_gas"] = (float) persentaseKadarGas;
+  req["pengujian"] = false;
+
+  String json = JSON.stringify(req);
+  db.insert("kondisi_tapai", json, false);
+}
