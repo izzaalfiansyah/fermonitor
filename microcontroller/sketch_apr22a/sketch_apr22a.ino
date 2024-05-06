@@ -6,13 +6,14 @@
 #include <assert.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
+#include <Callmebot_ESP32.h>
 
 #define BOARD "ESP-32"
 #define MQPIN 34
 #define DHTPIN 4
 #define LAMPPIN 26
 #define FANPIN 25
-#define BUZZERPIN = 23
+#define BUZZERPIN 23
 
 #define SUPABASE_URL "https://oxmfbobxmqldgthethlz.supabase.co"
 #define SUPABASE_ANON_KEY "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94bWZib2J4bXFsZGd0aGV0aGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDgwNjQ1NDksImV4cCI6MjAyMzY0MDU0OX0.pTDI9CsiN8wthOWhHjM1dONrRP_Hd7BcbwfKgeKGhtU"
@@ -31,6 +32,7 @@ float kelembaban;
 float persentaseKadarGas;
 bool pengujian;
 float kadarGasVoltase;
+String status = "Menunggu";
 JSONVar dataPengujian;
 
 void setup(){
@@ -41,6 +43,7 @@ void setup(){
 
   digitalWrite(LAMPPIN, HIGH);
   digitalWrite(FANPIN, HIGH);
+  digitalWrite(BUZZERPIN, HIGH);
 
   Serial.begin(115200);
 
@@ -89,11 +92,11 @@ void loop(){
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("G : ");
-  lcd.print(kadarGas);
-  lcd.setCursor(0,1);
-  lcd.print("PG : ");
   lcd.print(persentaseKadarGas, 1);
   lcd.print(" %");
+  lcd.setCursor(0,1);
+  lcd.print("H : ");
+  lcd.print(status);
 
   delay(2000);
 
@@ -101,55 +104,75 @@ void loop(){
   suhu = dht.readTemperature();
   kelembaban = dht.readHumidity();
 
-  // menampilkan suhu dan kelembaban pada LCD
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("S : ");
-  lcd.print(suhu, 1);
-  lcd.print(" C");
-  lcd.setCursor(0, 1);
-  lcd.print("K : ");
-  lcd.print(kelembaban, 1);
-  lcd.print(" %");
+  if (suhu != 25.5 && kelembaban != 25.5) {
+    // menampilkan suhu dan kelembaban pada LCD
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("S : ");
+    lcd.print(suhu, 1);
+    lcd.print(" C");
+    lcd.setCursor(0, 1);
+    lcd.print("K : ");
+    lcd.print(kelembaban, 1);
+    lcd.print(" %");
 
-  // menyalakan lampu jika suhu di bawah 30
-  if (suhu <= 30) {
-    digitalWrite(LAMPPIN, LOW);
-  } else {
-    digitalWrite(LAMPPIN, HIGH);
-  }
-
-  // menyalakan kipas jika suhu di atas 40
-  if (suhu >= 40) {
-    digitalWrite(FANPIN, LOW);
-  } else {
-    digitalWrite(FANPIN, HIGH);
-  }
-
-  // menentukan data masuk ke pengujian atau tidak berdasarkan jarak jam
-  long unsigned epochTimeNow = timeClient.getEpochTime();
-
-  if (dataPengujian.length() > 0) {
-    JSONVar dataPengujianTerakhir = dataPengujian[dataPengujian.length() - 1];
-    int created_time = dataPengujianTerakhir["created_time"];
-
-    int epochTimeDiff = epochTimeNow - created_time;
-    int jam = epochTimeDiff / 3600; // 1 jam = 3600 detik;
-
-    if (jam >= 6) {
-      pengujian = true;
+    // menyalakan lampu jika suhu di bawah 30
+    if (suhu <= 30) {
+      digitalWrite(LAMPPIN, LOW);
     } else {
-      pengujian = false;
+      digitalWrite(LAMPPIN, HIGH);
     }
+
+    // menyalakan kipas jika suhu di atas 40
+    if (suhu >= 40) {
+      digitalWrite(FANPIN, LOW);
+    } else {
+      digitalWrite(FANPIN, HIGH);
+    }
+
+    // menentukan data masuk ke pengujian atau tidak berdasarkan jarak jam
+    long unsigned epochTimeNow = timeClient.getEpochTime();
+
+    if (dataPengujian.length() > 0) {
+      JSONVar dataPengujianTerakhir = dataPengujian[dataPengujian.length() - 1];
+      int created_time = dataPengujianTerakhir["created_time"];
+
+      int epochTimeDiff = epochTimeNow - created_time;
+      int jam = epochTimeDiff / 3600; // 1 jam = 3600 detik;
+      
+      if (jam >= 6) {
+        pengujian = true;
+      } else {
+        pengujian = false;
+      }
+    }
+
+    getDebugging();
+
+    String dataHistoriJson = db.from("histori_fermentasi").select("*").order("created_at", "desc", true).limit(1).doSelect();
+    JSONVar dataHistori = JSON.parse(dataHistoriJson);
+    bool statusHistoriTerakhir = dataHistori[0]["selesai"];
+
+    if (statusHistoriTerakhir == false) {
+      digitalWrite(BUZZERPIN, LOW);
+
+      bool historiTerakhirBerhasil = (bool) dataHistori[0]["berhasil"];
+
+      if (historiTerakhirBerhasil) {
+        status = "Matang";
+      } else {
+        status = "Gagal";
+      }
+    } else {
+      digitalWrite(BUZZERPIN, HIGH);
+      insertKondisiTapai();
+      cekKematangan();
+      cekKegagalan();
+    }
+
+    delay(2000);
+    lcd.clear();
   }
-
-  getDebugging();
-
-  insertKondisiTapai();
-  cekKematangan();
-
-  delay(2000);
-  lcd.clear();
 }
 
 void getDebugging() {
@@ -176,10 +199,28 @@ float getKadarGas() {
 
 // konversi tegangan ke persen berdasarkan rumus yang telah ditentukan
 float getPersentaseKadarGas(float voltase) {
-  float persentase = 0.2043 * pow(voltase, 2) + 0.0611 * voltase - 0.0249;
+  float persentase = 0.2043 * pow(voltase, 2.0) + 0.0611 * voltase - 0.0249;
   float hasil = constrain(persentase * 100, 0, 100);
 
   return hasil;
+}
+
+void callUser(bool matang = true) {
+  String pengaturanJson = db.from("pengaturan").select("*").limit(1).doSelect();
+  JSONVar pengaturan = JSON.parse(pengaturanJson);
+  String web_url = pengaturan[0]["web_url"];
+
+  String text;
+  if (matang == true) {
+    text = "Fermentasi tapai berhasil dan sudah matang. ";
+  } else {
+    text = "Fermentasi tapai gagal. ";
+  }
+
+  text = text + "Lihat selengkapnya di " + web_url + ".";
+
+  Callmebot.telegramCall(pengaturan[0]["telepon"], text, "id-ID-Standard-B");
+  Serial.println(Callmebot.debug());
 }
 
 // menyimpan kondisi tapai pada database
@@ -202,35 +243,67 @@ void insertKondisiTapai() {
 
 // melakukan cek kematangan
 void cekKematangan() {
-  if (persentaseKadarGas >= 5.3 && kelembaban >= 93) {
-    String dataAWalJson = db.from("kondisi_tapai").select("*").order("created_at", "asc", true).limit(1).doSelect();
-    String dataAkhirJson = db.from("kondisi_tapai").select("*").order("created_at", "desc", true).limit(1).doSelect();
+  if (persentaseKadarGas >= 5.28) {
+    status = "Matang";
+
+    String dataAwalJson = db.from("kondisi_tapai").select("*").order("created_time", "asc", true).limit(1).doSelect();
+    String dataAkhirJson = db.from("kondisi_tapai").select("*").order("created_time", "desc", true).limit(1).doSelect();
 
     JSONVar dataAwal = JSON.parse(dataAwalJson);
     JSONVar dataAkhir = JSON.parse(dataAkhirJson);
 
     JSONVar req;
     req["berhasil"] = true;
-    req["waktu_awal"] = dataAwal[0]["created_time"];
-    req["waktu_akhir"] = dataAkhir[0]["created_time"]
+    req["waktu_awal"] = (int) dataAwal[0]["created_time"];
+    req["waktu_akhir"] = (int) dataAkhir[0]["created_time"];
 
     String json = JSON.stringify(req);
 
+    callUser(true);
     db.insert("histori_fermentasi", json, false);
   }
+}
 
-  String dataHistori = db.from("histori_fermentasi").select("*").order("created_at", "desc", true).limit(1).doSelect();
-  JSONVar dataHistoriTerakhir = JSON.parse(dataHistori)[0];
+// mengecek kegagalan
+void cekKegagalan() {
+  JSONVar dataPengujianAwal = dataPengujian[0];
+  int epochTimeAwal = (int) dataPengujianAwal["created_time"];
 
-  if (dataHistoriTerakhir["selesai"] == false) {
-    digitalWrite(BUZZERPIN, HIGH);
-  } else {
-    digitalWrite(BUZZERPIN, LOW);
+  for (int i = 0; i < dataPengujian.length(); i++) {
+    int epochTime = (int) dataPengujian[i]["created_time"];
+    int epochTimeDiff = epochTime - epochTimeAwal;
+    int jam = epochTimeDiff / 3600;
+
+    float kadarGas = (double) dataPengujian[i]["kadar_gas"];
+    float regresiKadarGas = 0.0025 * pow(jam, 2.0) - 0.0397 * jam - 0.1222;
+    float nilaiPerempat = regresiKadarGas / 4.0;
+
+    if (kadarGas > (regresiKadarGas + nilaiPerempat) || kadarGas < (regresiKadarGas - nilaiPerempat)) {
+      status = "Gagal";
+    }
+  }
+
+  if (status == "Gagal") {
+    String dataAwalJson = db.from("kondisi_tapai").select("*").order("created_time", "asc", true).limit(1).doSelect();
+    String dataAkhirJson = db.from("kondisi_tapai").select("*").order("created_time", "desc", true).limit(1).doSelect();
+
+    JSONVar dataAwal = JSON.parse(dataAwalJson);
+    JSONVar dataAkhir = JSON.parse(dataAkhirJson);
+
+    JSONVar req;
+    req["berhasil"] = false;
+    req["waktu_awal"] = (int) dataAwal[0]["created_time"];
+    req["waktu_akhir"] = (int) dataAkhir[0]["created_time"];
+
+    String json = JSON.stringify(req);
+
+    callUser(false);
+    db.insert("histori_fermentasi", json, false);
   }
 }
 
 // mengambil data pengujian
 void getDataPengujian() {
-  String json = db.from("kondisi_tapai").select("*").eq("pengujian", "TRUE").order("created_at", "asc", true).doSelect();
+  String json = db.from("kondisi_tapai").select("*").eq("pengujian", "TRUE").order("created_time", "asc", true).doSelect();
   dataPengujian = JSON.parse(json);
 }
