@@ -165,9 +165,9 @@ void loop(){
       }
     } else {
       digitalWrite(BUZZERPIN, HIGH);
-      insertKondisiTapai();
       cekKematangan();
       cekKegagalan();
+      insertKondisiTapai();
     }
 
     delay(2000);
@@ -261,6 +261,8 @@ void cekKematangan() {
 
     callUser(true);
     db.insert("histori_fermentasi", json, false);
+
+    pengujian = true;
   }
 }
 
@@ -299,6 +301,8 @@ void cekKegagalan() {
 
     callUser(false);
     db.insert("histori_fermentasi", json, false);
+    
+    pengujian = true;
   }
 }
 
