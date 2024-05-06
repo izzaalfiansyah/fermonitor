@@ -4,6 +4,7 @@ import EyeDropperIcon from "../icons/EyeDropperIcon";
 import { Chart, registerables } from "chart.js";
 import supabase from "../utils/supabase";
 import { getTimes } from "../utils/dates";
+import { Histori } from "../types/Histori";
 
 export default function () {
   let canvas: any;
@@ -12,6 +13,21 @@ export default function () {
   const [kelembaban, setKelembaban] = createSignal<number>(0);
   const [kadarGas, setKadarGas] = createSignal<number[]>([]);
   const [timeStamps, setTimeStamps] = createSignal<any[]>([]);
+
+  const [lastHistori, setLastHistori] = createSignal<Histori | null>(null);
+
+  const getLastHistori = async () => {
+    const { data } = await supabase
+      .from("histori_fermentasi")
+      .select("*")
+      .limit(1)
+      .eq("selesai", false)
+      .order("created_at", { ascending: false });
+
+    if (!!data) {
+      setLastHistori(data[0]);
+    }
+  };
 
   const getData = async () => {
     const { data } = await supabase
@@ -107,12 +123,14 @@ export default function () {
 
     setTimeout(async () => {
       await renderChart();
-    }, 1000);
+      await getLastHistori();
+    }, 4000);
   };
 
   onMount(async () => {
     Chart.register(...registerables);
-    renderChart();
+    await renderChart();
+    await getLastHistori();
   });
 
   return (
@@ -129,8 +147,23 @@ export default function () {
       </Show>
       <div class={"space-y-5" + (kadarGas().length > 0 ? "" : "hidden")}>
         <div class="flex flex-wrap gap-5">
-          <div class="bg-red-500 lg:w-1/2 w-full h-52 rounded shadow text-white flex items-center justify-center">
-            <div class="uppercase text-3xl">belum matang</div>
+          <div
+            class={
+              (lastHistori()?.selesai == false
+                ? lastHistori()?.berhasil
+                  ? "bg-green-500"
+                  : "bg-red-500"
+                : "bg-orange-500") +
+              " lg:w-1/2 w-full h-52 rounded shadow text-white flex items-center justify-center"
+            }
+          >
+            <div class="uppercase text-3xl">
+              {lastHistori()?.selesai == false
+                ? lastHistori()?.berhasil
+                  ? "Matang"
+                  : "Gagal"
+                : "Menunggu"}
+            </div>
           </div>
           <div class="grid grid-cols-2 grow gap-5 ">
             <div class="bg-white rounded shadow min-h-24 flex flex-col items-center justify-center py-8">

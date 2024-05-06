@@ -86,7 +86,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
         .limit(1);
       setTimeout(() => {
         res(data);
-      }, 5000);
+      }, 10000);
     });
 
     const { data: lastData2 } = await supabase
@@ -95,11 +95,13 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
       .order("created_time", { ascending: false })
       .limit(1);
 
-    if (lastData1![0].created_time == lastData2![0].created_time) {
-      alert("Device offline!");
+    if (lastHistori()?.selesai) {
+      if (lastData1![0].created_time == lastData2![0].created_time) {
+        alert("Device offline!");
+      }
     }
 
-    // await checkStatusDevice();
+    await checkStatusDevice();
   };
 
   onMount(async () => {

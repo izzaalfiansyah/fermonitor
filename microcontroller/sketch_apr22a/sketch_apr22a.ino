@@ -274,14 +274,16 @@ void cekKegagalan() {
   for (int i = 0; i < dataPengujian.length(); i++) {
     int epochTime = (int) dataPengujian[i]["created_time"];
     int epochTimeDiff = epochTime - epochTimeAwal;
-    int jam = epochTimeDiff / 3600;
+    int lamaJam = epochTimeDiff / 3600;
 
     float kadarGas = (double) dataPengujian[i]["kadar_gas"];
-    float regresiKadarGas = 0.0025 * pow(jam, 2.0) - 0.0397 * jam - 0.1222;
+    float regresiKadarGas = 0.0025 * pow(lamaJam, 2.0) - 0.0397 * lamaJam - 0.1222;
     float nilaiPerempat = regresiKadarGas / 4.0;
 
-    if (kadarGas > (regresiKadarGas + nilaiPerempat) || kadarGas < (regresiKadarGas - nilaiPerempat)) {
-      status = "Gagal";
+    if (lamaJam > 12) {
+      if (kadarGas > (regresiKadarGas + nilaiPerempat) || kadarGas < (regresiKadarGas - nilaiPerempat)) {
+        status = "Gagal";
+      }
     }
   }
 
