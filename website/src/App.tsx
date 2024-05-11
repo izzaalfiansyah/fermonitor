@@ -33,6 +33,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
   ];
 
   const [lastHistori, setLastHistori] = createSignal<Histori | null>(null);
+  const [canNavigate, setCanNavigate] = createSignal<boolean>(false);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -51,6 +52,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
   };
 
   const deleteAllData = async () => {
+    await supabase.from("pengaturan").update({ running: false }).eq("id", 1);
     await supabase.from("kondisi_tapai").delete().neq("id", "0");
 
     setLastHistori(null);
@@ -80,7 +82,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
   };
 
   const checkStatusDevice = async () => {
-    const lastData1: any = await new Promise(async (res, rej) => {
+    const lastData1: any = await new Promise(async (res) => {
       const { data } = await supabase
         .from("kondisi_tapai")
         .select("created_time")
@@ -115,6 +117,8 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
         if (location.pathname != "/") {
           navigate("/");
         }
+      } else {
+        setCanNavigate(true);
       }
     }
   };
@@ -122,7 +126,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
   onMount(async () => {
     await checkPengaturan();
     await getLastHistori();
-    // await checkStatusDevice();
+    await checkStatusDevice();
   });
 
   return (
@@ -131,7 +135,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
         <div class="text-xl font-medium uppercase">
           <span class="text-primary">Ferm</span>onitor
         </div>
-        <A href="/pengaturan">
+        <A href={canNavigate() ? "/pengaturan" : "/"}>
           <SettingIcon class="w-6 h-6" />
         </A>
       </nav>
@@ -141,7 +145,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
             <For each={menus}>
               {(item) => (
                 <A
-                  href={item.path}
+                  href={canNavigate() ? item.path : "/"}
                   class={
                     "flex mb-5 items-center transition " +
                     (location.pathname == item.path ? "text-primary" : "")
