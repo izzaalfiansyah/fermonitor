@@ -4,4 +4,5 @@ export interface Pengaturan {
     telepon: string;
     suhu_min: number;
     suhu_max: number;
+    running: boolean;
 }

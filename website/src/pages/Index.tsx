@@ -5,6 +5,7 @@ import { Chart, registerables } from "chart.js";
 import supabase from "../utils/supabase";
 import { getTimes } from "../utils/dates";
 import { Histori } from "../types/Histori";
+import { Pengaturan } from "../types/Pengaturan";
 
 export default function () {
   let canvas: any;
@@ -15,6 +16,7 @@ export default function () {
   const [timeStamps, setTimeStamps] = createSignal<any[]>([]);
 
   const [lastHistori, setLastHistori] = createSignal<Histori | null>(null);
+  const [pengaturan, setPengaturan] = createSignal<Pengaturan | null>(null);
 
   const getLastHistori = async () => {
     const { data } = await supabase
@@ -127,64 +129,95 @@ export default function () {
     }, 4000);
   };
 
+  const getPengaturan = async () => {
+    const { data } = await supabase.from("pengaturan").select("*").limit(1);
+
+    if (data) {
+      setPengaturan(data[0]);
+    }
+  };
+
+  const startFermentasi = async () => {
+    await supabase.from("pengaturan").update({ running: true }).eq("id", 1);
+    window.location.reload();
+  };
+
   onMount(async () => {
+    await getPengaturan();
     Chart.register(...registerables);
     await renderChart();
     await getLastHistori();
   });
 
   return (
-    <div class="space-y-5">
-      <Show when={!kadarGas()}>
-        <div class="bg-white rounded p-5 shadow">Data tidak terdeteksi</div>
-        <div class="bg-white rounded p-5 shadow flex items-center justify-center">
-          <img
-            src="https://www.islandofworldpeace.ie/wp-content/uploads/2019/03/no-image.jpg"
-            alt=""
-            class="w-[300px] h-[300px]"
-          />
-        </div>
-      </Show>
-      <div class={"space-y-5" + (kadarGas().length > 0 ? "" : "hidden")}>
-        <div class="flex flex-wrap gap-5">
-          <div
-            class={
-              (lastHistori()?.selesai == false
-                ? lastHistori()?.berhasil
-                  ? "bg-green-500"
-                  : "bg-red-500"
-                : "bg-orange-500") +
-              " lg:w-1/2 w-full h-52 rounded shadow text-white flex items-center justify-center"
-            }
-          >
-            <div class="uppercase text-3xl">
-              {lastHistori()?.selesai == false
-                ? lastHistori()?.berhasil
-                  ? "Matang"
-                  : "Gagal"
-                : "Menunggu"}
-            </div>
-          </div>
-          <div class="grid grid-cols-2 grow gap-5 ">
-            <div class="bg-white rounded shadow min-h-24 flex flex-col items-center justify-center py-8">
-              <EyeDropperIcon class="w-12 h-12 inline-block" />
-              <div class="text-3xl mt-5">
-                {suhu().toString().slice(0, 4)} °C
-              </div>
-            </div>
-            <div class="bg-white rounded shadow min-h-24 flex flex-col items-center justify-center py-8">
-              <BeakerIcon class="w-12 h-12 inline-block" />
-              <div class="text-3xl mt-5">
-                {kelembaban().toString().slice(0, 4)} %
-              </div>
-            </div>
+    <Show
+      when={pengaturan()?.running}
+      fallback={
+        <div class="space-y-5">
+          <div class="bg-white rounded p-5 shadow h-[500px] flex items-center justify-center">
+            <button
+              class="bg-blue-500 px-4 py-2 uppercase text-white rounded hover:bg-blue-400 transition"
+              type="button"
+              onClick={startFermentasi}
+            >
+              MULAI FERMENTASI
+            </button>
           </div>
         </div>
-        <div class="bg-white rounded shadow p-5">
-          <div class="text-xl">Grafik Kadar Gas</div>
-          <canvas ref={canvas}></canvas>
+      }
+    >
+      <div class="space-y-5">
+        <Show when={!kadarGas()}>
+          <div class="bg-white rounded p-5 shadow">Data tidak terdeteksi</div>
+          <div class="bg-white rounded p-5 shadow flex items-center justify-center">
+            <img
+              src="https://www.islandofworldpeace.ie/wp-content/uploads/2019/03/no-image.jpg"
+              alt=""
+              class="w-[300px] h-[300px]"
+            />
+          </div>
+        </Show>
+        <div class={"space-y-5" + (kadarGas().length > 0 ? "" : "hidden")}>
+          <div class="flex flex-wrap gap-5">
+            <div
+              class={
+                (lastHistori()?.selesai == false
+                  ? lastHistori()?.berhasil
+                    ? "bg-green-500"
+                    : "bg-red-500"
+                  : "bg-orange-500") +
+                " lg:w-1/2 w-full h-52 rounded shadow text-white flex items-center justify-center"
+              }
+            >
+              <div class="uppercase text-3xl">
+                {lastHistori()?.selesai == false
+                  ? lastHistori()?.berhasil
+                    ? "Matang"
+                    : "Gagal"
+                  : "Menunggu"}
+              </div>
+            </div>
+            <div class="grid grid-cols-2 grow gap-5 ">
+              <div class="bg-white rounded shadow min-h-24 flex flex-col items-center justify-center py-8">
+                <EyeDropperIcon class="w-12 h-12 inline-block" />
+                <div class="text-3xl mt-5">
+                  {suhu().toString().slice(0, 4)} °C
+                </div>
+              </div>
+              <div class="bg-white rounded shadow min-h-24 flex flex-col items-center justify-center py-8">
+                <BeakerIcon class="w-12 h-12 inline-block" />
+                <div class="text-3xl mt-5">
+                  {kelembaban().toString().slice(0, 4)} %
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded shadow p-5">
+            <div class="text-xl">Grafik Kadar Gas</div>
+            <canvas ref={canvas}></canvas>
+          </div>
         </div>
       </div>
-    </div>
+    </Show>
   );
 }

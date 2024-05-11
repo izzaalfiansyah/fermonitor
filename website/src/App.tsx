@@ -1,4 +1,4 @@
-import { A, useLocation } from "@solidjs/router";
+import { A, useLocation, useNavigate } from "@solidjs/router";
 import { createSignal, For, JSX, Match, onMount, Switch } from "solid-js";
 import SettingIcon from "./icons/SettingIcon";
 import HomeIcon from "./icons/HomeIcon";
@@ -6,6 +6,7 @@ import ArchiveIcon from "./icons/ArchiveIcon";
 import ClockIcon from "./icons/ClockIcon";
 import supabase from "./utils/supabase";
 import { Histori } from "./types/Histori";
+import { Pengaturan } from "./types/Pengaturan";
 
 export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
   const menus = [
@@ -34,6 +35,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
   const [lastHistori, setLastHistori] = createSignal<Histori | null>(null);
 
   const location = useLocation();
+  const navigate = useNavigate();
 
   const getLastHistori = async () => {
     const { data } = await supabase
@@ -95,7 +97,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
       .order("created_time", { ascending: false })
       .limit(1);
 
-    if (lastHistori()?.selesai) {
+    if (lastHistori()?.selesai != false) {
       if (lastData1![0].created_time == lastData2![0].created_time) {
         alert("Device offline!");
       }
@@ -104,9 +106,23 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
     await checkStatusDevice();
   };
 
+  const checkPengaturan = async () => {
+    const { data } = await supabase.from("pengaturan").select("*").limit(1);
+    if (data) {
+      const item: Pengaturan = data[0];
+
+      if (!item.running) {
+        if (location.pathname != "/") {
+          navigate("/");
+        }
+      }
+    }
+  };
+
   onMount(async () => {
+    await checkPengaturan();
     await getLastHistori();
-    await checkStatusDevice();
+    // await checkStatusDevice();
   });
 
   return (
