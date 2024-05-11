@@ -7,6 +7,7 @@ import ClockIcon from "./icons/ClockIcon";
 import supabase from "./utils/supabase";
 import { Histori } from "./types/Histori";
 import { Pengaturan } from "./types/Pengaturan";
+import BarsIcon from "./icons/BarsIcon";
 
 export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
   const menus = [
@@ -34,6 +35,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
 
   const [lastHistori, setLastHistori] = createSignal<Histori | null>(null);
   const [canNavigate, setCanNavigate] = createSignal<boolean>(false);
+  const [showSidebar, setShowSidebar] = createSignal<boolean>(false);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -100,7 +102,9 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
       .limit(1);
 
     if (lastHistori()?.selesai != false) {
-      if (lastData1![0].created_time == lastData2![0].created_time) {
+      if (lastData1![0] == lastData2![0]) {
+        alert("Device offline!");
+      } else if (lastData1![0].created_time == lastData2![0].created_time) {
         alert("Device offline!");
       }
     }
@@ -123,6 +127,10 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
     }
   };
 
+  const toggleSidebar = () => {
+    setShowSidebar(!showSidebar());
+  };
+
   onMount(async () => {
     await checkPengaturan();
     await getLastHistori();
@@ -132,6 +140,9 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
   return (
     <div class="min-h-screen bg-gray-50 flex flex-col text-gray-700">
       <nav class="sticky top-0 left-0 right-0 z-20 bg-white w-full flex items-center justify-between h-[70px] shadow px-5">
+        <button type="button" onClick={toggleSidebar} class="lg:hidden">
+          <BarsIcon class="w-6 h-6" />
+        </button>
         <div class="text-xl font-medium uppercase">
           <span class="text-primary">Ferm</span>onitor
         </div>
@@ -140,7 +151,10 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
         </A>
       </nav>
       <div class="grow relative">
-        <div class="absolute top-0 left-0 lg:block hidden w-72 bg-white shadow h-full px-8">
+        <div
+          class="absolute top-0 left-0 lg:block w-72 bg-white shadow h-full px-8 transform lg:translate-x-0 -translate-x-[100%] transition"
+          classList={{ "!translate-x-0": showSidebar() }}
+        >
           <div class="mt-10">
             <For each={menus}>
               {(item) => (
@@ -150,6 +164,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
                     "flex mb-5 items-center transition " +
                     (location.pathname == item.path ? "text-primary" : "")
                   }
+                  onClick={toggleSidebar}
                 >
                   <item.icon class="w-5 h-5 mr-3"></item.icon>
                   {item.title}
