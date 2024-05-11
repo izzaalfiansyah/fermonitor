@@ -34,6 +34,7 @@ bool pengujian;
 float kadarGasVoltase;
 String status = "Menunggu";
 JSONVar dataPengujian;
+JSONVar pengaturan;
 
 void setup(){
   pinMode(MQPIN, INPUT);
@@ -81,8 +82,27 @@ void setup(){
 }
 
 void loop(){
+  getPengaturan();
   timeClient.update();
 
+  bool running = (bool) pengaturan[0]["running"];
+
+  if (running) {
+    runFermentasi();
+  } else {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Aku siap!");
+    delay(1000);
+
+    lcd.clear();
+    lcd.setCursor(7, 1);
+    lcd.print("Aku siap!");
+    delay(1000);
+  }
+}
+
+void runFermentasi() {
   // mendapatkan nilai kadar gas
   float kadarGas = getKadarGas();
   kadarGasVoltase = kadarGas / 4095.0 * 3.3;
@@ -205,9 +225,13 @@ float getPersentaseKadarGas(float voltase) {
   return hasil;
 }
 
+void getPengaturan() {
+  String dataJson = db.from("pengaturan").select("*").limit(1).doSelect();
+  JSONVar data = JSON.parse(dataJson);
+  pengaturan = data;
+}
+
 void callUser(bool matang = true) {
-  String pengaturanJson = db.from("pengaturan").select("*").limit(1).doSelect();
-  JSONVar pengaturan = JSON.parse(pengaturanJson);
   String web_url = pengaturan[0]["web_url"];
 
   String text;
@@ -243,26 +267,29 @@ void insertKondisiTapai() {
 
 // melakukan cek kematangan
 void cekKematangan() {
-  if (persentaseKadarGas >= 5.28) {
-    status = "Matang";
+  // jika sudah lebih dari 3 * 6 jam (18 jam)
+  if (dataPengujian.length() > 3) {
+    if (persentaseKadarGas >= 5.28) {
+      status = "Matang";
 
-    String dataAwalJson = db.from("kondisi_tapai").select("*").order("created_time", "asc", true).limit(1).doSelect();
-    String dataAkhirJson = db.from("kondisi_tapai").select("*").order("created_time", "desc", true).limit(1).doSelect();
+      String dataAwalJson = db.from("kondisi_tapai").select("*").order("created_time", "asc", true).limit(1).doSelect();
+      String dataAkhirJson = db.from("kondisi_tapai").select("*").order("created_time", "desc", true).limit(1).doSelect();
 
-    JSONVar dataAwal = JSON.parse(dataAwalJson);
-    JSONVar dataAkhir = JSON.parse(dataAkhirJson);
+      JSONVar dataAwal = JSON.parse(dataAwalJson);
+      JSONVar dataAkhir = JSON.parse(dataAkhirJson);
 
-    JSONVar req;
-    req["berhasil"] = true;
-    req["waktu_awal"] = (int) dataAwal[0]["created_time"];
-    req["waktu_akhir"] = (int) dataAkhir[0]["created_time"];
+      JSONVar req;
+      req["berhasil"] = true;
+      req["waktu_awal"] = (int) dataAwal[0]["created_time"];
+      req["waktu_akhir"] = (int) dataAkhir[0]["created_time"];
 
-    String json = JSON.stringify(req);
+      String json = JSON.stringify(req);
 
-    callUser(true);
-    db.insert("histori_fermentasi", json, false);
+      callUser(true);
+      db.insert("histori_fermentasi", json, false);
 
-    pengujian = true;
+      pengujian = true;
+    }
   }
 }
 

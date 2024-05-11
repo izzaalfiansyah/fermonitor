@@ -123,6 +123,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
         }
       } else {
         setCanNavigate(true);
+        await checkStatusDevice();
       }
     }
   };
@@ -132,9 +133,8 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
   };
 
   onMount(async () => {
-    await checkPengaturan();
     await getLastHistori();
-    await checkStatusDevice();
+    await checkPengaturan();
   });
 
   return (
