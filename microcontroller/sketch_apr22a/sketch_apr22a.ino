@@ -186,7 +186,6 @@ void runFermentasi() {
     } else {
       digitalWrite(BUZZERPIN, HIGH);
       cekKematangan();
-      cekKegagalan();
       insertKondisiTapai();
     }
 
@@ -262,14 +261,23 @@ void insertKondisiTapai() {
   
   if (pengujian == true) {
     getDataPengujian();
+    cekKegagalan();
   }
 }
 
 // melakukan cek kematangan
 void cekKematangan() {
-  // jika sudah lebih dari 3 * 6 jam (18 jam)
-  if (dataPengujian.length() > 3) {
-    if (persentaseKadarGas >= 5.28) {
+  JSONVar dataPengujianAwal = dataPengujian[0];
+  int epochTimeAwal = (int) dataPengujianAwal["created_time"];
+  int epochTimeSekarang = timeClient.getEpochTime();
+
+  int epochTimeDiff = epochTimeSekarang - epochTimeAwal;
+  int lamaJam = epochTimeDiff / 3600;
+
+  // jika sudah lebih dari 24 jam
+  if (lamaJam > 24) {
+
+    if (persentaseKadarGas >= 5.28 || lamaJam > 72) {
       status = "Matang";
 
       String dataAwalJson = db.from("kondisi_tapai").select("*").order("created_time", "asc", true).limit(1).doSelect();
@@ -297,20 +305,19 @@ void cekKematangan() {
 void cekKegagalan() {
   JSONVar dataPengujianAwal = dataPengujian[0];
   int epochTimeAwal = (int) dataPengujianAwal["created_time"];
+  int epochTimeSekarang = timeClient.getEpochTime();
 
-  for (int i = 0; i < dataPengujian.length(); i++) {
-    int epochTime = (int) dataPengujian[i]["created_time"];
-    int epochTimeDiff = epochTime - epochTimeAwal;
-    int lamaJam = epochTimeDiff / 3600;
+  int epochTimeDiff = epochTimeSekarang - epochTimeAwal;
+  int lamaJam = epochTimeDiff / 3600;
 
-    float kadarGas = (double) dataPengujian[i]["kadar_gas"];
-    float regresiKadarGas = 0.0025 * pow(lamaJam, 2.0) - 0.0397 * lamaJam - 0.1222;
-    float nilaiPerempat = regresiKadarGas / 4.0;
+  float regresiKadarGas = 0.0025 * pow(lamaJam, 2.0) - 0.0397 * lamaJam - 0.1222;
+  float nilaiPerempat = regresiKadarGas / 4.0;
 
-    if (lamaJam > 12) {
-      if (kadarGas > (regresiKadarGas + nilaiPerempat) || kadarGas < (regresiKadarGas - nilaiPerempat)) {
-        status = "Gagal";
-      }
+  if (lamaJam > 12) {
+    // jika kadar gas tidak naik secara signifikan
+    // if (persentaseKadarGas > (regresiKadarGas + nilaiPerempat) || persentaseKadarGas < (regresiKadarGas - nilaiPerempat)) {
+    if (persentaseKadarGas < (regresiKadarGas - nilaiPerempat)) {
+      status = "Gagal";
     }
   }
 
