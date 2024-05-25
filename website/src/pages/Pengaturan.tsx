@@ -58,7 +58,7 @@ export default function () {
           Kontak digunakan untuk mengirimkan notifikasi sistem kepada pemilik.
         </p>
         <div class="my-5">
-          {/* <div class="mb-3">
+          <div class="mb-3">
             <div class="mb-1">Email</div>
             <input
               type="text"
@@ -67,7 +67,7 @@ export default function () {
               value={req()?.email}
               onInput={(e) => handleReqChange("email", e.target.value)}
             />
-          </div> */}
+          </div>
           <div class="mb-3">
             <div class="mb-1">Username / Nomor Telegram</div>
             <input
