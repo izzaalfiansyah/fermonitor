@@ -7,6 +7,7 @@
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include <Callmebot_ESP32.h>
+#include <ESP_Mail_Client.h>
 
 #define BOARD "ESP-32"
 #define MQPIN 34
@@ -21,11 +22,17 @@
 #define WIFI_SSID "Vivo Y21c"
 #define WIFI_PASSWORD "12346789"
 
+#define SMTP_HOST "sandbox.smtp.mailtrap.io"
+#define SMTP_PORT 2525
+#define AUTHOR_EMAIL "16d58b0c89cba1"
+#define AUTHOR_PASSWORD "f077a3dc3e2f84"
+
 Supabase db;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 DHT dht(DHTPIN, 22);
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 3600 * 7, 60000); // GMT +7
+SMTPSession smtp;
 
 float suhu;
 float kelembaban;
@@ -35,6 +42,8 @@ float kadarGasVoltase;
 String status = "Menunggu";
 JSONVar dataPengujian;
 JSONVar pengaturan;
+
+void smtpCallback(SMTP_Status status);
 
 void setup(){
   pinMode(MQPIN, INPUT);
@@ -244,6 +253,99 @@ void callUser(bool matang = true) {
 
   Callmebot.telegramCall(pengaturan[0]["telepon"], text, "id-ID-Standard-B");
   Serial.println(Callmebot.debug());
+  sendEmail(text);
+
+}
+
+void sendEmail(String text) {
+  // inisialisasi email client
+  MailClient.networkReconnect(true);
+  smtp.debug(1);
+  smtp.callback(smtpCallback);
+
+  Session_Config config;
+  config.server.host_name = SMTP_HOST;
+  config.server.port = SMTP_PORT;
+  config.login.email = AUTHOR_EMAIL;
+  config.login.password = AUTHOR_PASSWORD;
+  config.login.user_domain = "";
+  config.time.ntp_server = F("pool.ntp.org,time.nist.gov");
+  config.time.gmt_offset = 7;
+  config.time.day_light_offset = 0;
+
+  SMTP_Message message;
+  String emailRecipient = JSON.stringify(pengaturan[0]["email"]);
+  message.sender.name = F("Fermonitor");
+  message.sender.email = "fermonitor@official.com";
+  message.subject = "Status Fermentasi Tapai";
+  message.addRecipient(emailRecipient, emailRecipient);
+
+  message.text.content = text.c_str();
+  message.text.charSet = "us-ascii";
+  message.text.transfer_encoding = Content_Transfer_Encoding::enc_7bit;
+
+  message.priority = esp_mail_smtp_priority::esp_mail_smtp_priority_low;
+  message.response.notify = esp_mail_smtp_notify_success | esp_mail_smtp_notify_failure | esp_mail_smtp_notify_delay;
+
+  if (!smtp.connect(&config)){
+    ESP_MAIL_PRINTF("Connection error, Status Code: %d, Error Code: %d, Reason: %s", smtp.statusCode(), smtp.errorCode(), smtp.errorReason().c_str());
+    return;
+  }
+
+  if (!smtp.isLoggedIn()){
+    Serial.println("Gagal login akun email");
+  }
+
+  else{
+    if (smtp.isAuthenticated()) {
+      Serial.println("Berhasil login email");
+    } else {
+      Serial.println("Terhubung ke email tanpa otorisasi");
+    }
+  }
+
+
+  if (!MailClient.sendMail(&smtp, &message)) {
+    ESP_MAIL_PRINTF("Error, Status Code: %d, Error Code: %d, Reason: %s", smtp.statusCode(), smtp.errorCode(), smtp.errorReason().c_str());
+  }
+}
+
+void smtpCallback(SMTP_Status status){
+  /* Print the current status */
+  Serial.println(status.info());
+
+  /* Print the sending result */
+  if (status.success()){
+    // ESP_MAIL_PRINTF used in the examples is for format printing via debug Serial port
+    // that works for all supported Arduino platform SDKs e.g. AVR, SAMD, ESP32 and ESP8266.
+    // In ESP8266 and ESP32, you can use Serial.printf directly.
+
+    Serial.println("----------------");
+    ESP_MAIL_PRINTF("Message sent success: %d\n", status.completedCount());
+    ESP_MAIL_PRINTF("Message sent failed: %d\n", status.failedCount());
+    Serial.println("----------------\n");
+
+    for (size_t i = 0; i < smtp.sendingResult.size(); i++)
+    {
+      /* Get the result item */
+      SMTP_Result result = smtp.sendingResult.getItem(i);
+
+      // In case, ESP32, ESP8266 and SAMD device, the timestamp get from result.timestamp should be valid if
+      // your device time was synched with NTP server.
+      // Other devices may show invalid timestamp as the device time was not set i.e. it will show Jan 1, 1970.
+      // You can call smtp.setSystemTime(xxx) to set device time manually. Where xxx is timestamp (seconds since Jan 1, 1970)
+      
+      ESP_MAIL_PRINTF("Message No: %d\n", i + 1);
+      ESP_MAIL_PRINTF("Status: %s\n", result.completed ? "success" : "failed");
+      ESP_MAIL_PRINTF("Date/Time: %s\n", MailClient.Time.getDateTimeString(result.timestamp, "%B %d, %Y %H:%M:%S").c_str());
+      ESP_MAIL_PRINTF("Recipient: %s\n", result.recipients.c_str());
+      ESP_MAIL_PRINTF("Subject: %s\n", result.subject.c_str());
+    }
+    Serial.println("----------------\n");
+
+    // You need to clear sending result as the memory usage will grow up.
+    smtp.sendingResult.clear();
+  }
 }
 
 // menyimpan kondisi tapai pada database
