@@ -53,7 +53,7 @@ void setup(){
 
   digitalWrite(LAMPPIN, HIGH);
   digitalWrite(FANPIN, HIGH);
-  digitalWrite(BUZZERPIN, HIGH);
+  digitalWrite(BUZZERPIN, LOW);
 
   Serial.begin(115200);
 
@@ -183,7 +183,7 @@ void runFermentasi() {
     bool statusHistoriTerakhir = dataHistori[0]["selesai"];
 
     if (statusHistoriTerakhir == false) {
-      digitalWrite(BUZZERPIN, LOW);
+      digitalWrite(BUZZERPIN, HIGH);
 
       bool historiTerakhirBerhasil = (bool) dataHistori[0]["berhasil"];
 
@@ -193,7 +193,7 @@ void runFermentasi() {
         status = "Gagal";
       }
     } else {
-      digitalWrite(BUZZERPIN, HIGH);
+      digitalWrite(BUZZERPIN, LOW);
       cekKematangan();
       insertKondisiTapai();
     }
