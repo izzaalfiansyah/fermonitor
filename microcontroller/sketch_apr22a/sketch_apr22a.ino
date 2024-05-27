@@ -1,6 +1,6 @@
-#include <ESP32_Supabase.h>
 #include <LiquidCrystal_I2C.h>
 #include <DHT.h>
+#include <ESP32_Supabase.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #include <Arduino_JSON.h>
@@ -8,6 +8,9 @@
 #include <NTPClient.h>
 #include <Callmebot_ESP32.h>
 #include <ESP_Mail_Client.h>
+// #include <ESPAsyncWebServer.h>
+// #include <AsyncTCP.h>
+// #include "SPIFFS.h"
 
 #define BOARD "ESP-32"
 #define MQPIN 34
@@ -20,19 +23,26 @@
 #define SUPABASE_ANON_KEY "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94bWZib2J4bXFsZGd0aGV0aGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDgwNjQ1NDksImV4cCI6MjAyMzY0MDU0OX0.pTDI9CsiN8wthOWhHjM1dONrRP_Hd7BcbwfKgeKGhtU"
 
 #define WIFI_SSID "Vivo Y21c"
-#define WIFI_PASSWORD "12346789"
+#define WIFI_PASS "12346789"
 
 #define SMTP_HOST "sandbox.smtp.mailtrap.io"
 #define SMTP_PORT 2525
 #define AUTHOR_EMAIL "16d58b0c89cba1"
 #define AUTHOR_PASSWORD "f077a3dc3e2f84"
 
-Supabase db;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 DHT dht(DHTPIN, 22);
+Supabase db;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 3600 * 7, 60000); // GMT +7
 SMTPSession smtp;
+// AsyncWebServer server(80);
+
+// String WIFI_SSID;
+// String WIFI_PASS;
+
+const char* ssidPath = "/ssid.txt";
+const char* passPath = "/pass.txt";
 
 float suhu;
 float kelembaban;
@@ -44,6 +54,37 @@ JSONVar dataPengujian;
 JSONVar pengaturan;
 
 void smtpCallback(SMTP_Status status);
+
+// void initSPIFFS() {
+//   if (!SPIFFS.begin(true)) {
+//     Serial.println("An error has occurred while mounting SPIFFS");
+//   }
+//   Serial.println("SPIFFS mounted successfully");
+// }
+
+// String readFile(fs::FS &fs, const char * path){
+//   File file = fs.open(path);
+//   if(!file || file.isDirectory()){
+//     return String();
+//   }
+
+//   String fileContent;
+//   while(file.available()){
+//     fileContent = file.readStringUntil('\n');
+//     break;     
+//   }
+//   return fileContent;
+// }
+
+// void writeFile(fs::FS &fs, const char * path, const char * message){
+//   File file = fs.open(path, FILE_WRITE);
+  
+//   if(file.print(message)){
+//     Serial.println("- file written");
+//   } else {
+//     Serial.println("- write failed");
+//   }
+// }
 
 void setup(){
   pinMode(MQPIN, INPUT);
@@ -57,6 +98,11 @@ void setup(){
 
   Serial.begin(115200);
 
+  // initSPIFFS();
+
+  // WIFI_SSID = readFile(SPIFFS, ssidPath);
+  // WIFI_PASS = readFile(SPIFFS, passPath);
+
   // inisialisasi LCD
   lcd.init();
   lcd.backlight();
@@ -68,7 +114,41 @@ void setup(){
   dht.begin();
 
   // inisialisasi WiFi
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+
+  // if (WiFi.status() != WL_CONNECTED) {
+  //   WiFi.softAP("Fermonitor V1", NULL);
+  //   IPAddress IP = WiFi.softAPIP();
+    
+  //   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+  //     request->send(SPIFFS, "/wifimanager.html", "text/html");
+  //   });
+    
+  //   server.serveStatic("/", SPIFFS, "/");
+
+  //   server.on("/", HTTP_POST, [](AsyncWebServerRequest *request) {
+  //     int params = request->params();
+  //     for(int i=0;i<params;i++){
+  //       AsyncWebParameter* p = request->getParam(i);
+  //       if(p->isPost()){
+  //         if (p->name() == "ssid") {
+  //           WIFI_SSID = p->value().c_str();
+  //           writeFile(SPIFFS, ssidPath, WIFI_SSID.c_str());
+  //         }
+  //         if (p->name() == "pass") {
+  //           WIFI_PASS = p->value().c_str();
+  //           writeFile(SPIFFS, ssidPath, WIFI_PASS.c_str());
+  //         }
+  //       }
+  //     }
+  //     request->send(200, "text/plain", "Berhasil. Pengaturan WiFi berhasil di simpan, sistem akan melakukan restart.");
+      
+  //     delay(3000);
+  //     ESP.restart();
+  //   });
+
+  //   server.begin();
+  // }
 
   delay(20000);
 
