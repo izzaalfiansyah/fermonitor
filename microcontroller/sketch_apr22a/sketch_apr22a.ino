@@ -2,10 +2,10 @@
 #include <LiquidCrystal_I2C.h>
 #include <DHT.h>
 #include <WiFi.h>
+#include <WiFiUdp.h>
 #include <Arduino_JSON.h>
 #include <assert.h>
 #include <NTPClient.h>
-#include <WiFiUdp.h>
 #include <Callmebot_ESP32.h>
 #include <ESP_Mail_Client.h>
 
@@ -68,18 +68,14 @@ void setup(){
   dht.begin();
 
   // inisialisasi WiFi
-  Serial.print("Menghubungkan ke WiFi");
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   delay(20000);
 
-  // menampilkan gagal terhubung ke jaringan pada LCD
-  if (WiFi.status() != WL_CONNECTED) {
-    lcd.setCursor(0, 0);
-    lcd.print("Gagal terhubung");
-    lcd.setCursor(0, 1);
-    lcd.print("ke jaringan!");
-  }
+  // inisialisasi mail client
+  MailClient.networkReconnect(true);
+  smtp.debug(0);
+  smtp.callback(smtpCallback);
   
   // inisialisasi waktu
   timeClient.begin();
@@ -91,23 +87,43 @@ void setup(){
 }
 
 void loop(){
-  getPengaturan();
-  timeClient.update();
+  if (WiFi.status() == WL_CONNECTED) {
+    getPengaturan();
+    timeClient.update();
 
-  bool running = (bool) pengaturan[0]["running"];
+    // mengambil data status mesin
+    bool running = (bool) pengaturan[0]["running"];
 
-  if (running) {
-    runFermentasi();
+    if (running) {
+      runFermentasi();
+    } else {
+      // menampilkan aku siap jika alat belum dirunning
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Aku siap!");
+      delay(1000);
+
+      lcd.clear();
+      lcd.setCursor(7, 0);
+      lcd.print("Aku siap!");
+      delay(1000);
+
+      lcd.clear();
+      lcd.setCursor(0, 1);
+      lcd.print("Aku siap!");
+      delay(1000);
+
+      lcd.clear();
+      lcd.setCursor(7, 1);
+      lcd.print("Aku siap!");
+      delay(1000);
+    }
   } else {
-    lcd.clear();
+    // menampilkan gagal terhubung ke jaringan pada LCD
     lcd.setCursor(0, 0);
-    lcd.print("Aku siap!");
-    delay(1000);
-
-    lcd.clear();
-    lcd.setCursor(7, 1);
-    lcd.print("Aku siap!");
-    delay(1000);
+    lcd.print("Gagal terhubung");
+    lcd.setCursor(0, 1);
+    lcd.print("ke jaringan!");
   }
 }
 
@@ -258,11 +274,6 @@ void callUser(bool matang = true) {
 }
 
 void sendEmail(String text) {
-  // inisialisasi email client
-  MailClient.networkReconnect(true);
-  smtp.debug(1);
-  smtp.callback(smtpCallback);
-
   Session_Config config;
   config.server.host_name = SMTP_HOST;
   config.server.port = SMTP_PORT;
@@ -274,7 +285,7 @@ void sendEmail(String text) {
   config.time.day_light_offset = 0;
 
   SMTP_Message message;
-  String emailRecipient = JSON.stringify(pengaturan[0]["email"]);
+  String emailRecipient = pengaturan[0]["email"];
   message.sender.name = F("Fermonitor");
   message.sender.email = "fermonitor@official.com";
   message.subject = "Status Fermentasi Tapai";
@@ -311,39 +322,8 @@ void sendEmail(String text) {
 }
 
 void smtpCallback(SMTP_Status status){
-  /* Print the current status */
-  Serial.println(status.info());
-
-  /* Print the sending result */
+  // hapus memory email jika berhasil terkirim
   if (status.success()){
-    // ESP_MAIL_PRINTF used in the examples is for format printing via debug Serial port
-    // that works for all supported Arduino platform SDKs e.g. AVR, SAMD, ESP32 and ESP8266.
-    // In ESP8266 and ESP32, you can use Serial.printf directly.
-
-    Serial.println("----------------");
-    ESP_MAIL_PRINTF("Message sent success: %d\n", status.completedCount());
-    ESP_MAIL_PRINTF("Message sent failed: %d\n", status.failedCount());
-    Serial.println("----------------\n");
-
-    for (size_t i = 0; i < smtp.sendingResult.size(); i++)
-    {
-      /* Get the result item */
-      SMTP_Result result = smtp.sendingResult.getItem(i);
-
-      // In case, ESP32, ESP8266 and SAMD device, the timestamp get from result.timestamp should be valid if
-      // your device time was synched with NTP server.
-      // Other devices may show invalid timestamp as the device time was not set i.e. it will show Jan 1, 1970.
-      // You can call smtp.setSystemTime(xxx) to set device time manually. Where xxx is timestamp (seconds since Jan 1, 1970)
-      
-      ESP_MAIL_PRINTF("Message No: %d\n", i + 1);
-      ESP_MAIL_PRINTF("Status: %s\n", result.completed ? "success" : "failed");
-      ESP_MAIL_PRINTF("Date/Time: %s\n", MailClient.Time.getDateTimeString(result.timestamp, "%B %d, %Y %H:%M:%S").c_str());
-      ESP_MAIL_PRINTF("Recipient: %s\n", result.recipients.c_str());
-      ESP_MAIL_PRINTF("Subject: %s\n", result.subject.c_str());
-    }
-    Serial.println("----------------\n");
-
-    // You need to clear sending result as the memory usage will grow up.
     smtp.sendingResult.clear();
   }
 }

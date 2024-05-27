@@ -1,12 +1,13 @@
 // #include <ESP32_Supabase.h>
 #include <LiquidCrystal_I2C.h>
 #include <DHT.h>
-// #include <WiFi.h>
+#include <WiFi.h>
+// #include <WiFiUdp.h>
 // #include <Arduino_JSON.h>
 // #include <assert.h>
 // #include <NTPClient.h>
-// #include <WiFiUdp.h>
 // #include <Callmebot_ESP32.h>
+// #include <ESP_Mail_Client.h>
 
 #define BOARD "ESP-32"
 #define MQPIN 34
@@ -21,11 +22,17 @@
 // #define WIFI_SSID "Vivo Y21c"
 // #define WIFI_PASSWORD "12346789"
 
+// #define SMTP_HOST "sandbox.smtp.mailtrap.io"
+// #define SMTP_PORT 2525
+// #define AUTHOR_EMAIL "16d58b0c89cba1"
+// #define AUTHOR_PASSWORD "f077a3dc3e2f84"
+
 // Supabase db;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 DHT dht(DHTPIN, 22);
 // WiFiUDP ntpUDP;
 // NTPClient timeClient(ntpUDP, "pool.ntp.org", 3600 * 7, 60000); // GMT +7
+// SMTPSession smtp;
 
 float suhu;
 float kelembaban;
@@ -35,6 +42,8 @@ float kadarGasVoltase;
 String status = "Menunggu";
 // JSONVar dataPengujian;
 // JSONVar pengaturan;
+
+// void smtpCallback(SMTP_Status status);
 
 void setup(){
   pinMode(MQPIN, INPUT);
@@ -59,20 +68,16 @@ void setup(){
   dht.begin();
 
   // inisialisasi WiFi
-  // Serial.print("Menghubungkan ke WiFi");
   // WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   delay(20000);
 
-  // menampilkan gagal terhubung ke jaringan pada LCD
-  // if (WiFi.status() != WL_CONNECTED) {
-  //   lcd.setCursor(0, 0);
-  //   lcd.print("Gagal terhubung");
-  //   lcd.setCursor(0, 1);
-  //   lcd.print("ke jaringan!");
-  // }
+  // inisialisasi mail client
+  // MailClient.networkReconnect(true);
+  // smtp.debug(0);
+  // smtp.callback(smtpCallback);
   
-  // inisialisasi waktu
+  // // inisialisasi waktu
   // timeClient.begin();
 
   // // inisialisasi supabase
@@ -82,23 +87,43 @@ void setup(){
 }
 
 void loop(){
-  // getPengaturan();
-  // timeClient.update();
+  // if (WiFi.status() == WL_CONNECTED) {
+  //   getPengaturan();
+  //   timeClient.update();
 
-  // bool running = (bool) pengaturan[0]["running"];
+  //   // mengambil data status mesin
+  //   bool running = (bool) pengaturan[0]["running"];
 
-  // if (running) {
-    runFermentasi();
+  //   if (running) {
+      runFermentasi();
+  //   } else {
+  //     // menampilkan aku siap jika alat belum dirunning
+  //     lcd.clear();
+  //     lcd.setCursor(0, 0);
+  //     lcd.print("Aku siap!");
+  //     delay(1000);
+
+  //     lcd.clear();
+  //     lcd.setCursor(7, 0);
+  //     lcd.print("Aku siap!");
+  //     delay(1000);
+
+  //     lcd.clear();
+  //     lcd.setCursor(0, 1);
+  //     lcd.print("Aku siap!");
+  //     delay(1000);
+
+  //     lcd.clear();
+  //     lcd.setCursor(7, 1);
+  //     lcd.print("Aku siap!");
+  //     delay(1000);
+  //   }
   // } else {
-  //   lcd.clear();
+  //   // menampilkan gagal terhubung ke jaringan pada LCD
   //   lcd.setCursor(0, 0);
-  //   lcd.print("Aku siap!");
-  //   delay(1000);
-
-  //   lcd.clear();
-  //   lcd.setCursor(7, 1);
-  //   lcd.print("Aku siap!");
-  //   delay(1000);
+  //   lcd.print("Gagal terhubung");
+  //   lcd.setCursor(0, 1);
+  //   lcd.print("ke jaringan!");
   // }
 }
 
@@ -188,7 +213,6 @@ void runFermentasi() {
     // } else {
     //   digitalWrite(BUZZERPIN, LOW);
     //   cekKematangan();
-    //   cekKegagalan();
     //   insertKondisiTapai();
     // }
 
@@ -221,7 +245,7 @@ float getKadarGas() {
 
 // konversi tegangan ke persen berdasarkan rumus yang telah ditentukan
 float getPersentaseKadarGas(float voltase) {
-  float persentase = 0.1727 * pow(voltase, 2.0) + 0.1805 * voltase - 0.137;
+  float persentase = 0.2043 * pow(voltase, 2.0) + 0.0611 * voltase - 0.0249;
   float hasil = constrain(persentase * 100, 0, 100);
 
   return hasil;
@@ -247,6 +271,63 @@ float getPersentaseKadarGas(float voltase) {
 
 //   Callmebot.telegramCall(pengaturan[0]["telepon"], text, "id-ID-Standard-B");
 //   Serial.println(Callmebot.debug());
+//   sendEmail(text);
+
+// }
+
+// void sendEmail(String text) {
+//   Session_Config config;
+//   config.server.host_name = SMTP_HOST;
+//   config.server.port = SMTP_PORT;
+//   config.login.email = AUTHOR_EMAIL;
+//   config.login.password = AUTHOR_PASSWORD;
+//   config.login.user_domain = "";
+//   config.time.ntp_server = F("pool.ntp.org,time.nist.gov");
+//   config.time.gmt_offset = 7;
+//   config.time.day_light_offset = 0;
+
+//   SMTP_Message message;
+//   String emailRecipient = pengaturan[0]["email"];
+//   message.sender.name = F("Fermonitor");
+//   message.sender.email = "fermonitor@official.com";
+//   message.subject = "Status Fermentasi Tapai";
+//   message.addRecipient(emailRecipient, emailRecipient);
+
+//   message.text.content = text.c_str();
+//   message.text.charSet = "us-ascii";
+//   message.text.transfer_encoding = Content_Transfer_Encoding::enc_7bit;
+
+//   message.priority = esp_mail_smtp_priority::esp_mail_smtp_priority_low;
+//   message.response.notify = esp_mail_smtp_notify_success | esp_mail_smtp_notify_failure | esp_mail_smtp_notify_delay;
+
+//   if (!smtp.connect(&config)){
+//     ESP_MAIL_PRINTF("Connection error, Status Code: %d, Error Code: %d, Reason: %s", smtp.statusCode(), smtp.errorCode(), smtp.errorReason().c_str());
+//     return;
+//   }
+
+//   if (!smtp.isLoggedIn()){
+//     Serial.println("Gagal login akun email");
+//   }
+
+//   else{
+//     if (smtp.isAuthenticated()) {
+//       Serial.println("Berhasil login email");
+//     } else {
+//       Serial.println("Terhubung ke email tanpa otorisasi");
+//     }
+//   }
+
+
+//   if (!MailClient.sendMail(&smtp, &message)) {
+//     ESP_MAIL_PRINTF("Error, Status Code: %d, Error Code: %d, Reason: %s", smtp.statusCode(), smtp.errorCode(), smtp.errorReason().c_str());
+//   }
+// }
+
+// void smtpCallback(SMTP_Status status){
+//   // hapus memory email jika berhasil terkirim
+//   if (status.success()){
+//     smtp.sendingResult.clear();
+//   }
 // }
 
 // // menyimpan kondisi tapai pada database
@@ -264,14 +345,23 @@ float getPersentaseKadarGas(float voltase) {
   
 //   if (pengujian == true) {
 //     getDataPengujian();
+//     cekKegagalan();
 //   }
 // }
 
 // // melakukan cek kematangan
 // void cekKematangan() {
-//   // jika sudah lebih dari 3 * 6 jam (18 jam)
-//   if (dataPengujian.length() > 3) {
-//     if (persentaseKadarGas >= 5.28) {
+//   JSONVar dataPengujianAwal = dataPengujian[0];
+//   int epochTimeAwal = (int) dataPengujianAwal["created_time"];
+//   int epochTimeSekarang = timeClient.getEpochTime();
+
+//   int epochTimeDiff = epochTimeSekarang - epochTimeAwal;
+//   int lamaJam = epochTimeDiff / 3600;
+
+//   // jika sudah lebih dari 24 jam
+//   if (lamaJam > 24) {
+
+//     if (persentaseKadarGas >= 5.28 || lamaJam > 72) {
 //       status = "Matang";
 
 //       String dataAwalJson = db.from("kondisi_tapai").select("*").order("created_time", "asc", true).limit(1).doSelect();
@@ -299,20 +389,19 @@ float getPersentaseKadarGas(float voltase) {
 // void cekKegagalan() {
 //   JSONVar dataPengujianAwal = dataPengujian[0];
 //   int epochTimeAwal = (int) dataPengujianAwal["created_time"];
+//   int epochTimeSekarang = timeClient.getEpochTime();
 
-//   for (int i = 0; i < dataPengujian.length(); i++) {
-//     int epochTime = (int) dataPengujian[i]["created_time"];
-//     int epochTimeDiff = epochTime - epochTimeAwal;
-//     int lamaJam = epochTimeDiff / 3600;
+//   int epochTimeDiff = epochTimeSekarang - epochTimeAwal;
+//   int lamaJam = epochTimeDiff / 3600;
 
-//     float kadarGas = (double) dataPengujian[i]["kadar_gas"];
-//     float regresiKadarGas = 0.0025 * pow(lamaJam, 2.0) - 0.0397 * lamaJam - 0.1222;
-//     float nilaiPerempat = regresiKadarGas / 4.0;
+//   float regresiKadarGas = 0.0025 * pow(lamaJam, 2.0) - 0.0397 * lamaJam - 0.1222;
+//   float nilaiPerempat = regresiKadarGas / 4.0;
 
-//     if (lamaJam > 12) {
-//       if (kadarGas > (regresiKadarGas + nilaiPerempat) || kadarGas < (regresiKadarGas - nilaiPerempat)) {
-//         status = "Gagal";
-//       }
+//   if (lamaJam > 12) {
+//     // jika kadar gas tidak naik secara signifikan
+//     // if (persentaseKadarGas > (regresiKadarGas + nilaiPerempat) || persentaseKadarGas < (regresiKadarGas - nilaiPerempat)) {
+//     if (persentaseKadarGas < (regresiKadarGas - nilaiPerempat)) {
+//       status = "Gagal";
 //     }
 //   }
 
