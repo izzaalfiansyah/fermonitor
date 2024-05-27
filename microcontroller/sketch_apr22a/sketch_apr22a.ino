@@ -427,50 +427,54 @@ void insertKondisiTapai() {
   }
 }
 
-// melakukan cek kematangan
-void cekKematangan() {
+int getLamaJamFermentasi() {
   JSONVar dataPengujianAwal = dataPengujian[0];
   int epochTimeAwal = (int) dataPengujianAwal["created_time"];
   int epochTimeSekarang = timeClient.getEpochTime();
 
   int epochTimeDiff = epochTimeSekarang - epochTimeAwal;
   int lamaJam = epochTimeDiff / 3600;
+
+  return lamaJam;
+}
+
+void insertHistory(bool berhasil = true) {
+    String dataAwalJson = db.from("kondisi_tapai").select("*").order("created_time", "asc", true).limit(1).doSelect();
+    String dataAkhirJson = db.from("kondisi_tapai").select("*").order("created_time", "desc", true).limit(1).doSelect();
+
+    JSONVar dataAwal = JSON.parse(dataAwalJson);
+    JSONVar dataAkhir = JSON.parse(dataAkhirJson);
+
+    JSONVar req;
+    req["berhasil"] = berhasil;
+    req["waktu_awal"] = (int) dataAwal[0]["created_time"];
+    req["waktu_akhir"] = (int) dataAkhir[0]["created_time"];
+
+    String json = JSON.stringify(req);
+
+    callUser(true);
+    db.insert("histori_fermentasi", json, false);
+
+    pengujian = true;
+}
+
+// melakukan cek kematangan
+void cekKematangan() {
+  int lamaJam = getLamaJamFermentasi();
 
   // jika sudah lebih dari 24 jam
   if (lamaJam > 24) {
 
     if (persentaseKadarGas >= 5.28 || lamaJam > 72) {
       status = "Matang";
-
-      String dataAwalJson = db.from("kondisi_tapai").select("*").order("created_time", "asc", true).limit(1).doSelect();
-      String dataAkhirJson = db.from("kondisi_tapai").select("*").order("created_time", "desc", true).limit(1).doSelect();
-
-      JSONVar dataAwal = JSON.parse(dataAwalJson);
-      JSONVar dataAkhir = JSON.parse(dataAkhirJson);
-
-      JSONVar req;
-      req["berhasil"] = true;
-      req["waktu_awal"] = (int) dataAwal[0]["created_time"];
-      req["waktu_akhir"] = (int) dataAkhir[0]["created_time"];
-
-      String json = JSON.stringify(req);
-
-      callUser(true);
-      db.insert("histori_fermentasi", json, false);
-
-      pengujian = true;
+      insertHistory(true);
     }
   }
 }
 
 // mengecek kegagalan
 void cekKegagalan() {
-  JSONVar dataPengujianAwal = dataPengujian[0];
-  int epochTimeAwal = (int) dataPengujianAwal["created_time"];
-  int epochTimeSekarang = timeClient.getEpochTime();
-
-  int epochTimeDiff = epochTimeSekarang - epochTimeAwal;
-  int lamaJam = epochTimeDiff / 3600;
+  int lamaJam = getLamaJamFermentasi();
 
   float regresiKadarGas = 0.0025 * pow(lamaJam, 2.0) - 0.0397 * lamaJam - 0.1222;
   float nilaiPerempat = regresiKadarGas / 4.0;
@@ -480,27 +484,8 @@ void cekKegagalan() {
     // if (persentaseKadarGas > (regresiKadarGas + nilaiPerempat) || persentaseKadarGas < (regresiKadarGas - nilaiPerempat)) {
     if (persentaseKadarGas < (regresiKadarGas - nilaiPerempat)) {
       status = "Gagal";
+      insertHistory(false);
     }
-  }
-
-  if (status == "Gagal") {
-    String dataAwalJson = db.from("kondisi_tapai").select("*").order("created_time", "asc", true).limit(1).doSelect();
-    String dataAkhirJson = db.from("kondisi_tapai").select("*").order("created_time", "desc", true).limit(1).doSelect();
-
-    JSONVar dataAwal = JSON.parse(dataAwalJson);
-    JSONVar dataAkhir = JSON.parse(dataAkhirJson);
-
-    JSONVar req;
-    req["berhasil"] = false;
-    req["waktu_awal"] = (int) dataAwal[0]["created_time"];
-    req["waktu_akhir"] = (int) dataAkhir[0]["created_time"];
-
-    String json = JSON.stringify(req);
-
-    callUser(false);
-    db.insert("histori_fermentasi", json, false);
-    
-    pengujian = true;
   }
 }
 
