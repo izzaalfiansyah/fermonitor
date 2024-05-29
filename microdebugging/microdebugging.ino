@@ -1,13 +1,17 @@
-// #include <ESP32_Supabase.h>
 #include <LiquidCrystal_I2C.h>
 #include <DHT.h>
-#include <WiFi.h>
+// #include <ESP32_Supabase.h>
+// #include <WiFi.h>
 // #include <WiFiUdp.h>
 // #include <Arduino_JSON.h>
 // #include <assert.h>
 // #include <NTPClient.h>
 // #include <Callmebot_ESP32.h>
 // #include <ESP_Mail_Client.h>
+#include <ESPAsyncWebServer.h>
+#include <DNSServer.h>
+#include <AsyncTCP.h>
+#include "LittleFS.h"
 
 #define BOARD "ESP-32"
 #define MQPIN 34
@@ -20,30 +24,118 @@
 // #define SUPABASE_ANON_KEY "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94bWZib2J4bXFsZGd0aGV0aGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDgwNjQ1NDksImV4cCI6MjAyMzY0MDU0OX0.pTDI9CsiN8wthOWhHjM1dONrRP_Hd7BcbwfKgeKGhtU"
 
 // #define WIFI_SSID "Vivo Y21c"
-// #define WIFI_PASSWORD "12346789"
+// #define WIFI_PASS "12346789"
 
 // #define SMTP_HOST "sandbox.smtp.mailtrap.io"
 // #define SMTP_PORT 2525
 // #define AUTHOR_EMAIL "16d58b0c89cba1"
 // #define AUTHOR_PASSWORD "f077a3dc3e2f84"
 
-// Supabase db;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 DHT dht(DHTPIN, 22);
+// Supabase db;
 // WiFiUDP ntpUDP;
 // NTPClient timeClient(ntpUDP, "pool.ntp.org", 3600 * 7, 60000); // GMT +7
 // SMTPSession smtp;
+AsyncWebServer server(80);
+DNSServer dns;
+
+String WIFI_SSID;
+String WIFI_PASS;
+
+const char* ssidPath = "/ssid.txt";
+const char* passPath = "/pass.txt";
 
 float suhu;
 float kelembaban;
 float persentaseKadarGas;
-bool pengujian;
+bool pengujian = true;
 float kadarGasVoltase;
 String status = "Menunggu";
 // JSONVar dataPengujian;
 // JSONVar pengaturan;
 
 // void smtpCallback(SMTP_Status status);
+
+void initLittleFS() {
+  if (!LittleFS.begin(true)) {
+    Serial.println("An error has occurred while mounting LittleFS");
+  }
+  Serial.println("LittleFS mounted successfully");
+}
+
+String readFile(const char * path){
+  File file = LittleFS.open(path);
+  if(!file || file.isDirectory()){
+    return String();
+  }
+
+  String fileContent;
+  while(file.available()){
+    fileContent = file.readStringUntil('\n');
+    break;     
+  }
+  return fileContent;
+}
+
+void writeFile(const char * path, const char * message){
+  File file = LittleFS.open(path, FILE_WRITE);
+  
+  if(file.print(message)){
+    Serial.println("- file written");
+  } else {
+    Serial.println("- write failed");
+  }
+}
+
+void generateServer() {
+  WiFi.softAP("Fermonitor V1", NULL);
+  IPAddress IP = WiFi.softAPIP();
+  
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(LittleFS, "/wifimanager.html", "text/html");
+  });
+  
+  server.serveStatic("/", LittleFS, "/");
+
+  server.on("/", HTTP_POST, [](AsyncWebServerRequest *request) {
+    int params = request->params();
+    for(int i=0;i<params;i++){
+      AsyncWebParameter* p = request->getParam(i);
+      if(p->isPost()){
+        if (p->name() == "ssid") {
+          WIFI_SSID = p->value().c_str();
+          writeFile(ssidPath, WIFI_SSID.c_str());
+        }
+        if (p->name() == "pass") {
+          WIFI_PASS = p->value().c_str();
+          writeFile(passPath, WIFI_PASS.c_str());
+        }
+      }
+    }
+    request->send(200, "text/plain", "Berhasil. Pengaturan WiFi berhasil di simpan, sistem akan melakukan restart.");
+    
+    delay(3000);
+    ESP.restart();
+  });
+
+  server.begin();
+}
+
+class CaptiveRequestHandler : public AsyncWebHandler {
+public:
+  CaptiveRequestHandler() {}
+  virtual ~CaptiveRequestHandler() {}
+
+  bool canHandle(AsyncWebServerRequest *request){
+    //request->addInterestingHeader("ANY");
+    return true;
+  }
+
+  void handleRequest(AsyncWebServerRequest *request) {
+    request->send(LittleFS, "/wifimanager.html", "text/html");
+  }
+};
 
 void setup(){
   pinMode(MQPIN, INPUT);
@@ -57,6 +149,12 @@ void setup(){
 
   Serial.begin(115200);
 
+  // inisialisasi filesystem
+  initLittleFS();
+
+  WIFI_SSID = readFile(ssidPath);
+  WIFI_PASS = readFile(passPath);
+
   // inisialisasi LCD
   lcd.init();
   lcd.backlight();
@@ -68,25 +166,37 @@ void setup(){
   dht.begin();
 
   // inisialisasi WiFi
-  // WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  // WiFi.begin(WIFI_SSID, WIFI_PASS);
 
   delay(20000);
 
-  // inisialisasi mail client
-  // MailClient.networkReconnect(true);
-  // smtp.debug(0);
-  // smtp.callback(smtpCallback);
-  
-  // // inisialisasi waktu
-  // timeClient.begin();
+  // inisialisasi web server wifi manager
+  generateServer();
 
-  // // inisialisasi supabase
-  // db.begin(SUPABASE_URL, SUPABASE_ANON_KEY);
+  // if (WiFi.status() == WL_CONNECTED) {
+  //   // inisialisasi mail client
+  //   // MailClient.networkReconnect(true);
+  //   // smtp.debug(0);
+  //   // smtp.callback(smtpCallback);
+    
+  //   // inisialisasi waktu
+  //   timeClient.begin();
 
-  // getDataPengujian();
+  //   // inisialisasi supabase
+  //   db.begin(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  //   getDataPengujian();
+
+  // }
+
+  // inisialisasi dns server
+  dns.start(53, "*", WiFi.softAPIP());
+  server.addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER);
 }
 
 void loop(){
+  dns.processNextRequest();
+
   // if (WiFi.status() == WL_CONNECTED) {
   //   getPengaturan();
   //   timeClient.update();
@@ -97,6 +207,10 @@ void loop(){
   //   if (running) {
       runFermentasi();
   //   } else {
+  //     digitalWrite(LAMPPIN, HIGH);
+  //     digitalWrite(FANPIN, HIGH);
+  //     digitalWrite(BUZZERPIN, LOW);
+
   //     // menampilkan aku siap jika alat belum dirunning
   //     lcd.clear();
   //     lcd.setCursor(0, 0);
@@ -119,7 +233,6 @@ void loop(){
   //     delay(1000);
   //   }
   // } else {
-  //   // menampilkan gagal terhubung ke jaringan pada LCD
   //   lcd.setCursor(0, 0);
   //   lcd.print("Gagal terhubung");
   //   lcd.setCursor(0, 1);
@@ -138,7 +251,7 @@ void runFermentasi() {
   lcd.setCursor(0, 0);
   lcd.print("G : ");
   lcd.print(persentaseKadarGas, 1);
-  lcd.print("%-");
+  lcd.print(" %-");
   lcd.print(kadarGasVoltase, 2);
   lcd.print("V");
   lcd.setCursor(0,1);
@@ -212,8 +325,8 @@ void runFermentasi() {
     //   }
     // } else {
     //   digitalWrite(BUZZERPIN, LOW);
-    //   cekKematangan();
     //   insertKondisiTapai();
+    //   cekKematangan();
     // }
 
     delay(2000);
@@ -245,7 +358,10 @@ float getKadarGas() {
 
 // konversi tegangan ke persen berdasarkan rumus yang telah ditentukan
 float getPersentaseKadarGas(float voltase) {
-  float persentase = 0.2043 * pow(voltase, 2.0) + 0.0611 * voltase - 0.0249;
+  float m = 6.0 / (1.49 / 0.81);
+  float b = -m * 0.81;
+  float persentase = m * voltase + b;
+  // float persentase = 0.2043 * pow(voltase, 2.0) + 0.0611 * voltase - 0.0249;
   float hasil = constrain(persentase * 100, 0, 100);
 
   return hasil;
@@ -272,56 +388,55 @@ float getPersentaseKadarGas(float voltase) {
 //   Callmebot.telegramCall(pengaturan[0]["telepon"], text, "id-ID-Standard-B");
 //   Serial.println(Callmebot.debug());
 //   sendEmail(text);
-
 // }
 
-// void sendEmail(String text) {
-//   Session_Config config;
-//   config.server.host_name = SMTP_HOST;
-//   config.server.port = SMTP_PORT;
-//   config.login.email = AUTHOR_EMAIL;
-//   config.login.password = AUTHOR_PASSWORD;
-//   config.login.user_domain = "";
-//   config.time.ntp_server = F("pool.ntp.org,time.nist.gov");
-//   config.time.gmt_offset = 7;
-//   config.time.day_light_offset = 0;
+void sendEmail(String text) {
+  // Session_Config config;
+  // config.server.host_name = SMTP_HOST;
+  // config.server.port = SMTP_PORT;
+  // config.login.email = AUTHOR_EMAIL;
+  // config.login.password = AUTHOR_PASSWORD;
+  // config.login.user_domain = "";
+  // config.time.ntp_server = F("pool.ntp.org,time.nist.gov");
+  // config.time.gmt_offset = 7;
+  // config.time.day_light_offset = 0;
 
-//   SMTP_Message message;
-//   String emailRecipient = pengaturan[0]["email"];
-//   message.sender.name = F("Fermonitor");
-//   message.sender.email = "fermonitor@official.com";
-//   message.subject = "Status Fermentasi Tapai";
-//   message.addRecipient(emailRecipient, emailRecipient);
+  // SMTP_Message message;
+  // String emailRecipient = pengaturan[0]["email"];
+  // message.sender.name = F("Fermonitor");
+  // message.sender.email = "fermonitor@official.com";
+  // message.subject = "Status Fermentasi Tapai";
+  // message.addRecipient(emailRecipient, emailRecipient);
 
-//   message.text.content = text.c_str();
-//   message.text.charSet = "us-ascii";
-//   message.text.transfer_encoding = Content_Transfer_Encoding::enc_7bit;
+  // message.text.content = text.c_str();
+  // message.text.charSet = "us-ascii";
+  // message.text.transfer_encoding = Content_Transfer_Encoding::enc_7bit;
 
-//   message.priority = esp_mail_smtp_priority::esp_mail_smtp_priority_low;
-//   message.response.notify = esp_mail_smtp_notify_success | esp_mail_smtp_notify_failure | esp_mail_smtp_notify_delay;
+  // message.priority = esp_mail_smtp_priority::esp_mail_smtp_priority_low;
+  // message.response.notify = esp_mail_smtp_notify_success | esp_mail_smtp_notify_failure | esp_mail_smtp_notify_delay;
 
-//   if (!smtp.connect(&config)){
-//     ESP_MAIL_PRINTF("Connection error, Status Code: %d, Error Code: %d, Reason: %s", smtp.statusCode(), smtp.errorCode(), smtp.errorReason().c_str());
-//     return;
-//   }
+  // if (!smtp.connect(&config)){
+  //   ESP_MAIL_PRINTF("Connection error, Status Code: %d, Error Code: %d, Reason: %s", smtp.statusCode(), smtp.errorCode(), smtp.errorReason().c_str());
+  //   return;
+  // }
 
-//   if (!smtp.isLoggedIn()){
-//     Serial.println("Gagal login akun email");
-//   }
+  // if (!smtp.isLoggedIn()){
+  //   Serial.println("Gagal login akun email");
+  // }
 
-//   else{
-//     if (smtp.isAuthenticated()) {
-//       Serial.println("Berhasil login email");
-//     } else {
-//       Serial.println("Terhubung ke email tanpa otorisasi");
-//     }
-//   }
+  // else{
+  //   if (smtp.isAuthenticated()) {
+  //     Serial.println("Berhasil login email");
+  //   } else {
+  //     Serial.println("Terhubung ke email tanpa otorisasi");
+  //   }
+  // }
 
 
-//   if (!MailClient.sendMail(&smtp, &message)) {
-//     ESP_MAIL_PRINTF("Error, Status Code: %d, Error Code: %d, Reason: %s", smtp.statusCode(), smtp.errorCode(), smtp.errorReason().c_str());
-//   }
-// }
+  // if (!MailClient.sendMail(&smtp, &message)) {
+  //   ESP_MAIL_PRINTF("Error, Status Code: %d, Error Code: %d, Reason: %s", smtp.statusCode(), smtp.errorCode(), smtp.errorReason().c_str());
+  // }
+}
 
 // void smtpCallback(SMTP_Status status){
 //   // hapus memory email jika berhasil terkirim
@@ -330,7 +445,7 @@ float getPersentaseKadarGas(float voltase) {
 //   }
 // }
 
-// // menyimpan kondisi tapai pada database
+// menyimpan kondisi tapai pada database
 // void insertKondisiTapai() {
 //   JSONVar req;
 
@@ -349,8 +464,7 @@ float getPersentaseKadarGas(float voltase) {
 //   }
 // }
 
-// // melakukan cek kematangan
-// void cekKematangan() {
+// int getLamaJamFermentasi() {
 //   JSONVar dataPengujianAwal = dataPengujian[0];
 //   int epochTimeAwal = (int) dataPengujianAwal["created_time"];
 //   int epochTimeSekarang = timeClient.getEpochTime();
@@ -358,41 +472,47 @@ float getPersentaseKadarGas(float voltase) {
 //   int epochTimeDiff = epochTimeSekarang - epochTimeAwal;
 //   int lamaJam = epochTimeDiff / 3600;
 
+//   return lamaJam;
+// }
+
+// void insertHistory(bool berhasil = true) {
+//     String dataAwalJson = db.from("kondisi_tapai").select("*").order("created_time", "asc", true).limit(1).doSelect();
+//     String dataAkhirJson = db.from("kondisi_tapai").select("*").order("created_time", "desc", true).limit(1).doSelect();
+
+//     JSONVar dataAwal = JSON.parse(dataAwalJson);
+//     JSONVar dataAkhir = JSON.parse(dataAkhirJson);
+
+//     JSONVar req;
+//     req["berhasil"] = berhasil;
+//     req["waktu_awal"] = (int) dataAwal[0]["created_time"];
+//     req["waktu_akhir"] = (int) dataAkhir[0]["created_time"];
+
+//     String json = JSON.stringify(req);
+
+//     db.insert("histori_fermentasi", json, false);
+//     callUser(berhasil);
+
+//     pengujian = true;
+// }
+
+// // melakukan cek kematangan
+// void cekKematangan() {
+//   int lamaJam = getLamaJamFermentasi();
+
 //   // jika sudah lebih dari 24 jam
-//   if (lamaJam > 24) {
+//   // if (lamaJam > 24) {
 
-//     if (persentaseKadarGas >= 5.28 || lamaJam > 72) {
+//   if (dataPengujian.length() > 0) {
+//     if (persentaseKadarGas >= 5.28 || lamaJam >= 72) {
 //       status = "Matang";
-
-//       String dataAwalJson = db.from("kondisi_tapai").select("*").order("created_time", "asc", true).limit(1).doSelect();
-//       String dataAkhirJson = db.from("kondisi_tapai").select("*").order("created_time", "desc", true).limit(1).doSelect();
-
-//       JSONVar dataAwal = JSON.parse(dataAwalJson);
-//       JSONVar dataAkhir = JSON.parse(dataAkhirJson);
-
-//       JSONVar req;
-//       req["berhasil"] = true;
-//       req["waktu_awal"] = (int) dataAwal[0]["created_time"];
-//       req["waktu_akhir"] = (int) dataAkhir[0]["created_time"];
-
-//       String json = JSON.stringify(req);
-
-//       callUser(true);
-//       db.insert("histori_fermentasi", json, false);
-
-//       pengujian = true;
+//       insertHistory(true);
 //     }
 //   }
 // }
 
 // // mengecek kegagalan
 // void cekKegagalan() {
-//   JSONVar dataPengujianAwal = dataPengujian[0];
-//   int epochTimeAwal = (int) dataPengujianAwal["created_time"];
-//   int epochTimeSekarang = timeClient.getEpochTime();
-
-//   int epochTimeDiff = epochTimeSekarang - epochTimeAwal;
-//   int lamaJam = epochTimeDiff / 3600;
+//   int lamaJam = getLamaJamFermentasi();
 
 //   float regresiKadarGas = 0.0025 * pow(lamaJam, 2.0) - 0.0397 * lamaJam - 0.1222;
 //   float nilaiPerempat = regresiKadarGas / 4.0;
@@ -402,27 +522,8 @@ float getPersentaseKadarGas(float voltase) {
 //     // if (persentaseKadarGas > (regresiKadarGas + nilaiPerempat) || persentaseKadarGas < (regresiKadarGas - nilaiPerempat)) {
 //     if (persentaseKadarGas < (regresiKadarGas - nilaiPerempat)) {
 //       status = "Gagal";
+//       insertHistory(false);
 //     }
-//   }
-
-//   if (status == "Gagal") {
-//     String dataAwalJson = db.from("kondisi_tapai").select("*").order("created_time", "asc", true).limit(1).doSelect();
-//     String dataAkhirJson = db.from("kondisi_tapai").select("*").order("created_time", "desc", true).limit(1).doSelect();
-
-//     JSONVar dataAwal = JSON.parse(dataAwalJson);
-//     JSONVar dataAkhir = JSON.parse(dataAkhirJson);
-
-//     JSONVar req;
-//     req["berhasil"] = false;
-//     req["waktu_awal"] = (int) dataAwal[0]["created_time"];
-//     req["waktu_akhir"] = (int) dataAkhir[0]["created_time"];
-
-//     String json = JSON.stringify(req);
-
-//     callUser(false);
-//     db.insert("histori_fermentasi", json, false);
-    
-//     pengujian = true;
 //   }
 // }
 

@@ -84,32 +84,34 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
   };
 
   const checkStatusDevice = async () => {
-    const lastData1: any = await new Promise(async (res) => {
-      const { data } = await supabase
+    await getLastHistori();
+
+    if (!lastHistori()) {
+      const lastData1: any = await new Promise(async (res) => {
+        const { data } = await supabase
+          .from("kondisi_tapai")
+          .select("created_time")
+          .order("created_time", { ascending: false })
+          .limit(1);
+        setTimeout(() => {
+          res(data);
+        }, 10000);
+      });
+
+      const { data: lastData2 } = await supabase
         .from("kondisi_tapai")
         .select("created_time")
         .order("created_time", { ascending: false })
         .limit(1);
-      setTimeout(() => {
-        res(data);
-      }, 10000);
-    });
 
-    const { data: lastData2 } = await supabase
-      .from("kondisi_tapai")
-      .select("created_time")
-      .order("created_time", { ascending: false })
-      .limit(1);
-
-    if (lastHistori()?.selesai != false) {
       if (lastData1![0] == lastData2![0]) {
         alert("Device offline!");
       } else if (lastData1![0].created_time == lastData2![0].created_time) {
         alert("Device offline!");
       }
-    }
 
-    await checkStatusDevice();
+      await checkStatusDevice();
+    }
   };
 
   const checkPengaturan = async () => {
@@ -133,7 +135,6 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
   };
 
   onMount(async () => {
-    await getLastHistori();
     await checkPengaturan();
   });
 
@@ -159,7 +160,9 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
             <For each={menus}>
               {(item) => (
                 <A
-                  href={canNavigate() ? item.path : "/"}
+                  href={
+                    canNavigate() || item.path != "/pengujian" ? item.path : "/"
+                  }
                   class={
                     "flex mb-5 items-center transition " +
                     (location.pathname == item.path ? "text-primary" : "")
