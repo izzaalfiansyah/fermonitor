@@ -214,7 +214,7 @@ export default function () {
           </div>
           <div class="bg-white rounded shadow p-5">
             <div class="text-xl">Grafik Kadar Gas</div>
-            <canvas ref={canvas}></canvas>
+            <canvas ref={canvas} style={{ "max-height": "400px" }}></canvas>
           </div>
         </div>
       </div>
