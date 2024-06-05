@@ -147,7 +147,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
         <div class="text-xl font-medium uppercase">
           <span class="text-primary">Ferm</span>onitor
         </div>
-        <A href={canNavigate() ? "/pengaturan" : "/"}>
+        <A href="/pengaturan">
           <SettingIcon class="w-6 h-6" />
         </A>
       </nav>

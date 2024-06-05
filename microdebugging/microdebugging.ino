@@ -358,11 +358,16 @@ float getKadarGas() {
 
 // konversi tegangan ke persen berdasarkan rumus yang telah ditentukan
 float getPersentaseKadarGas(float voltase) {
-  float m = 6.0 / (1.49 / 0.81);
-  float b = -m * 0.81;
-  float persentase = m * voltase + b;
-  // float persentase = 0.2043 * pow(voltase, 2.0) + 0.0611 * voltase - 0.0249;
+  // float m = 6.0 / (1.49 / 0.33);
+  // float b = -m * 0.33;
+  // float persentase = m * voltase + b;
+  // float hasil = constrain(persentase, 0, 100);
+
+  float persentase = 0.0526 * voltase - 0.0174;
   float hasil = constrain(persentase * 100, 0, 100);
+
+  // float persentase = 0.2043 * pow(voltase, 2.0) + 0.0611 * voltase - 0.0249;
+  // float hasil = constrain(persentase * 100, 0, 100);
 
   return hasil;
 }
