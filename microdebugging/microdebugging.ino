@@ -15,7 +15,7 @@
 
 #define BOARD "ESP-32"
 #define MQPIN 34
-#define DHTPIN 4
+#define DHTPIN 2
 #define LAMPPIN 26
 #define FANPIN 25
 #define BUZZERPIN 23
