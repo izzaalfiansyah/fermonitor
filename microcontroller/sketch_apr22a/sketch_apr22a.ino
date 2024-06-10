@@ -325,13 +325,15 @@ void loop(){
       delay(1000);
     }
   } else {
+    Serial.println("Gagal terhubung ke " + WIFI_SSID);
+    
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Gagal terhubung");
     lcd.setCursor(0, 1);
-    lcd.print("ke jaringan!");
+    lcd.print("ke " + WIFI_SSID + "!");
 
-    Serial.println("Gagal terhubung ke jaringan");
+    delay(1000);
   }
 }
 
