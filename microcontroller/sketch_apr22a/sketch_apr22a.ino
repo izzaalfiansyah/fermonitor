@@ -227,9 +227,13 @@ void setup(){
   WIFI_SSID = readFile(ssidPath);
   WIFI_PASS = readFile(passPath);
 
+  Serial.println(WIFI_SSID);
+  Serial.println(WIFI_PASS);
+
   // inisialisasi LCD
   lcd.init();
   lcd.backlight();
+  lcd.clear();
 
   // inisialisasi DHT22
   dht.begin();
@@ -245,10 +249,12 @@ void setup(){
   while (i < duration) {
     int loading = i / ((float) duration) * 100;
 
-    Serial.println("Memuat : " + String(loading) + "%");
+    Serial.println("Memuat: " + String(loading) + "%");
 
     lcd.setCursor(0, 0);
-    lcd.print("Memuat : " + String(loading) + "%");
+    // lcd.print("SSID      : " + String(WIFI_SSID));
+    // lcd.setCursor(0, 1);
+    lcd.print("Memuat    : " + String(loading) + "%");
 
     delay(1000);
     i += 1;
@@ -319,6 +325,7 @@ void loop(){
       delay(1000);
     }
   } else {
+    lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Gagal terhubung");
     lcd.setCursor(0, 1);
