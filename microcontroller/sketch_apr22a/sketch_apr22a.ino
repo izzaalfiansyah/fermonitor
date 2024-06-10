@@ -172,7 +172,7 @@ void generateServer() {
 
   server.on("/", HTTP_POST, [](AsyncWebServerRequest *request) {
     int params = request->params();
-    for(int i=0;i<params;i++){
+    for(int i = 0; i < params; i++){
       AsyncWebParameter* p = request->getParam(i);
       if(p->isPost()){
         if (p->name() == "ssid") {
@@ -231,17 +231,28 @@ void setup(){
   lcd.init();
   lcd.backlight();
 
-  lcd.setCursor(0, 0);
-  lcd.print("Memuat..........");
-  Serial.println("Memuat..........");
-
   // inisialisasi DHT22
   dht.begin();
 
   // inisialisasi WiFi
   WiFi.begin(WIFI_SSID, WIFI_PASS);
 
-  delay(20000);
+  int i = 0;
+  int duration = 20;
+
+  Serial.println("Memuat.......");
+
+  while (i < duration) {
+    int loading = i / ((float) duration) * 100;
+
+    Serial.println("Memuat : " + String(loading) + "%");
+
+    lcd.setCursor(0, 0);
+    lcd.print("Memuat : " + String(loading) + "%");
+
+    delay(1000);
+    i += 1;
+  }
 
   // inisialisasi web server wifi manager
   generateServer();

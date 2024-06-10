@@ -231,17 +231,28 @@ void setup(){
   lcd.init();
   lcd.backlight();
 
-  lcd.setCursor(0, 0);
-  lcd.print("Memuat..........");
-  Serial.println("Memuat..........");
-
   // inisialisasi DHT22
   dht.begin();
 
   // inisialisasi WiFi
   // WiFi.begin(WIFI_SSID, WIFI_PASS);
 
-  delay(20000);
+  int i = 0;
+  int duration = 20;
+
+  Serial.println("Memuat.......");
+
+  while (i < duration) {
+    int loading = i / ((float) duration) * 100;
+
+    Serial.println("Memuat : " + String(loading) + "%");
+
+    lcd.setCursor(0, 0);
+    lcd.print("Memuat : " + String(loading) + "%");
+
+    delay(1000);
+    i += 1;
+  }
 
   // inisialisasi web server wifi manager
   generateServer();
@@ -443,7 +454,7 @@ float getPersentaseKadarGas(float voltase) {
   float persentase = 0.0526 * voltase - 0.0174;
   float hasil = constrain(persentase * 100, 0, 100);
 
-  // float persentase = 0.2043 * pow(voltase, 2.0) + 0.0611 * voltase - 0.0249;
+  // float persentase = 0.1727 * pow(voltase, 2.0) + 0.1805 * voltase - 0.137;
   // float hasil = constrain(persentase * 100, 0, 100);
 
   return hasil;
