@@ -6,7 +6,7 @@ interface TableProps extends JSX.HTMLAttributes<HTMLTableElement> {
 }
 
 export default function (props: TableProps) {
-  const [localProps, otherProps] = splitProps(props, ["headers", "items"]);
+  const [_, otherProps] = splitProps(props, ["headers", "items"]);
 
   return (
     <div class="overflow-x-auto">

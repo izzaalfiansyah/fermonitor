@@ -2,7 +2,7 @@ import { createSignal, onMount } from "solid-js";
 import Table from "../components/Table";
 import { Histori } from "../types/Histori";
 import supabase from "../utils/supabase";
-import { getDates, getTimeDiff } from "../utils/dates";
+import { getDates } from "../utils/dates";
 
 export default function () {
   const [items, setItems] = createSignal<Histori[]>([]);
