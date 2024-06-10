@@ -55,6 +55,80 @@ String status = "Menunggu";
 JSONVar dataPengujian;
 JSONVar pengaturan;
 
+const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
+<html>
+  <head>
+    <title>Fermonitor Wi-Fi Manager</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      * {
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+      }
+      .content {
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: dodgerblue;
+        padding: 20px;
+      }
+      .card {
+        background: white;
+        border: 1px solid gray;
+        padding: 40px 20px;
+        border-radius: 10px;
+        max-width: 450px;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      input {
+        width: 100%;
+        height: 40px;
+        margin-bottom: 10px;
+        margin-top: 5px;
+        padding-left: 10px;
+        padding-right: 10px;
+        border: 1px solid lightgray;
+        border-radius: 3px;
+      }
+      button {
+        height: 40px;
+        width: 100%;
+        margin-top: 20px;
+        border: transparent;
+        color: white;
+        background-color: dodgerblue;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="content">
+      <div class="card">
+        <div class="header">
+          <h1>WiFi Manager</h1>
+        </div>
+        <div>
+          <form action="/" method="POST">
+            <p>
+              <label for="ssid">SSID</label>
+              <input type="text" id="ssid" name="ssid" />
+              <label for="pass">Password</label>
+              <input type="text" id="pass" name="pass" />
+              <button type="submit">SIMPAN</button>
+            </p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>)rawliteral";
+
 // void smtpCallback(SMTP_Status status);
 
 void initLittleFS() {
@@ -93,10 +167,8 @@ void generateServer() {
   IPAddress IP = WiFi.softAPIP();
   
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(LittleFS, "/wifimanager.html", "text/html");
+    request->send(200, "text/html", index_html);
   });
-  
-  server.serveStatic("/", LittleFS, "/");
 
   server.on("/", HTTP_POST, [](AsyncWebServerRequest *request) {
     int params = request->params();
@@ -133,7 +205,7 @@ public:
   }
 
   void handleRequest(AsyncWebServerRequest *request) {
-    request->send(LittleFS, "/wifimanager.html", "text/html");
+    request->send(200, "text/html", index_html);
   }
 };
 
@@ -161,6 +233,7 @@ void setup(){
 
   lcd.setCursor(0, 0);
   lcd.print("Memuat..........");
+  Serial.println("Memuat..........");
 
   // inisialisasi DHT22
   dht.begin();
@@ -211,6 +284,8 @@ void loop(){
       digitalWrite(FANPIN, HIGH);
       digitalWrite(BUZZERPIN, LOW);
 
+      Serial.println("Mesin Siap!");
+
       // menampilkan aku siap jika alat belum dirunning
       lcd.clear();
       lcd.setCursor(0, 0);
@@ -237,6 +312,8 @@ void loop(){
     lcd.print("Gagal terhubung");
     lcd.setCursor(0, 1);
     lcd.print("ke jaringan!");
+
+    Serial.println("Gagal terhubung ke jaringan");
   }
 }
 

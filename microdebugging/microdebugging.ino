@@ -20,8 +20,8 @@
 #define FANPIN 25
 #define BUZZERPIN 23
 
-// #define SUPABASE_URL "https://oxmfbobxmqldgthethlz.supabase.co"
-// #define SUPABASE_ANON_KEY "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94bWZib2J4bXFsZGd0aGV0aGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDgwNjQ1NDksImV4cCI6MjAyMzY0MDU0OX0.pTDI9CsiN8wthOWhHjM1dONrRP_Hd7BcbwfKgeKGhtU"
+#define SUPABASE_URL "https://oxmfbobxmqldgthethlz.supabase.co"
+#define SUPABASE_ANON_KEY "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94bWZib2J4bXFsZGd0aGV0aGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDgwNjQ1NDksImV4cCI6MjAyMzY0MDU0OX0.pTDI9CsiN8wthOWhHjM1dONrRP_Hd7BcbwfKgeKGhtU"
 
 // #define WIFI_SSID "Vivo Y21c"
 // #define WIFI_PASS "12346789"
@@ -54,6 +54,80 @@ float kadarGasVoltase;
 String status = "Menunggu";
 // JSONVar dataPengujian;
 // JSONVar pengaturan;
+
+const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
+<html>
+  <head>
+    <title>Fermonitor Wi-Fi Manager</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      * {
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+      }
+      .content {
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: dodgerblue;
+        padding: 20px;
+      }
+      .card {
+        background: white;
+        border: 1px solid gray;
+        padding: 40px 20px;
+        border-radius: 10px;
+        max-width: 450px;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      input {
+        width: 100%;
+        height: 40px;
+        margin-bottom: 10px;
+        margin-top: 5px;
+        padding-left: 10px;
+        padding-right: 10px;
+        border: 1px solid lightgray;
+        border-radius: 3px;
+      }
+      button {
+        height: 40px;
+        width: 100%;
+        margin-top: 20px;
+        border: transparent;
+        color: white;
+        background-color: dodgerblue;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="content">
+      <div class="card">
+        <div class="header">
+          <h1>WiFi Manager</h1>
+        </div>
+        <div>
+          <form action="/" method="POST">
+            <p>
+              <label for="ssid">SSID</label>
+              <input type="text" id="ssid" name="ssid" />
+              <label for="pass">Password</label>
+              <input type="text" id="pass" name="pass" />
+              <button type="submit">SIMPAN</button>
+            </p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>)rawliteral";
 
 // void smtpCallback(SMTP_Status status);
 
@@ -93,10 +167,8 @@ void generateServer() {
   IPAddress IP = WiFi.softAPIP();
   
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(LittleFS, "/wifimanager.html", "text/html");
+    request->send(200, "text/html", index_html);
   });
-  
-  server.serveStatic("/", LittleFS, "/");
 
   server.on("/", HTTP_POST, [](AsyncWebServerRequest *request) {
     int params = request->params();
@@ -133,7 +205,7 @@ public:
   }
 
   void handleRequest(AsyncWebServerRequest *request) {
-    request->send(LittleFS, "/wifimanager.html", "text/html");
+    request->send(200, "text/html", index_html);
   }
 };
 
@@ -161,6 +233,7 @@ void setup(){
 
   lcd.setCursor(0, 0);
   lcd.print("Memuat..........");
+  Serial.println("Memuat..........");
 
   // inisialisasi DHT22
   dht.begin();
@@ -211,6 +284,8 @@ void loop(){
   //     digitalWrite(FANPIN, HIGH);
   //     digitalWrite(BUZZERPIN, LOW);
 
+  //     Serial.println("Mesin Siap!");
+
   //     // menampilkan aku siap jika alat belum dirunning
   //     lcd.clear();
   //     lcd.setCursor(0, 0);
@@ -237,6 +312,8 @@ void loop(){
   //   lcd.print("Gagal terhubung");
   //   lcd.setCursor(0, 1);
   //   lcd.print("ke jaringan!");
+
+  //   Serial.println("Gagal terhubung ke jaringan");
   // }
 }
 
@@ -251,7 +328,7 @@ void runFermentasi() {
   lcd.setCursor(0, 0);
   lcd.print("G : ");
   lcd.print(persentaseKadarGas, 1);
-  lcd.print(" %-");
+  lcd.print("%-");
   lcd.print(kadarGasVoltase, 2);
   lcd.print("V");
   lcd.setCursor(0,1);
@@ -361,7 +438,7 @@ float getPersentaseKadarGas(float voltase) {
   // float m = 6.0 / (1.49 / 0.33);
   // float b = -m * 0.33;
   // float persentase = m * voltase + b;
-  // float hasil = constrain(persentase, 0, 100);
+  // float hasil = constrain(persentase * 100, 0, 100);
 
   float persentase = 0.0526 * voltase - 0.0174;
   float hasil = constrain(persentase * 100, 0, 100);
@@ -395,62 +472,62 @@ float getPersentaseKadarGas(float voltase) {
 //   sendEmail(text);
 // }
 
-void sendEmail(String text) {
-  // Session_Config config;
-  // config.server.host_name = SMTP_HOST;
-  // config.server.port = SMTP_PORT;
-  // config.login.email = AUTHOR_EMAIL;
-  // config.login.password = AUTHOR_PASSWORD;
-  // config.login.user_domain = "";
-  // config.time.ntp_server = F("pool.ntp.org,time.nist.gov");
-  // config.time.gmt_offset = 7;
-  // config.time.day_light_offset = 0;
+// void sendEmail(String text) {
+//   // Session_Config config;
+//   // config.server.host_name = SMTP_HOST;
+//   // config.server.port = SMTP_PORT;
+//   // config.login.email = AUTHOR_EMAIL;
+//   // config.login.password = AUTHOR_PASSWORD;
+//   // config.login.user_domain = "";
+//   // config.time.ntp_server = F("pool.ntp.org,time.nist.gov");
+//   // config.time.gmt_offset = 7;
+//   // config.time.day_light_offset = 0;
 
-  // SMTP_Message message;
-  // String emailRecipient = pengaturan[0]["email"];
-  // message.sender.name = F("Fermonitor");
-  // message.sender.email = "fermonitor@official.com";
-  // message.subject = "Status Fermentasi Tapai";
-  // message.addRecipient(emailRecipient, emailRecipient);
+//   // SMTP_Message message;
+//   // String emailRecipient = pengaturan[0]["email"];
+//   // message.sender.name = F("Fermonitor");
+//   // message.sender.email = "fermonitor@official.com";
+//   // message.subject = "Status Fermentasi Tapai";
+//   // message.addRecipient(emailRecipient, emailRecipient);
 
-  // message.text.content = text.c_str();
-  // message.text.charSet = "us-ascii";
-  // message.text.transfer_encoding = Content_Transfer_Encoding::enc_7bit;
+//   // message.text.content = text.c_str();
+//   // message.text.charSet = "us-ascii";
+//   // message.text.transfer_encoding = Content_Transfer_Encoding::enc_7bit;
 
-  // message.priority = esp_mail_smtp_priority::esp_mail_smtp_priority_low;
-  // message.response.notify = esp_mail_smtp_notify_success | esp_mail_smtp_notify_failure | esp_mail_smtp_notify_delay;
+//   // message.priority = esp_mail_smtp_priority::esp_mail_smtp_priority_low;
+//   // message.response.notify = esp_mail_smtp_notify_success | esp_mail_smtp_notify_failure | esp_mail_smtp_notify_delay;
 
-  // if (!smtp.connect(&config)){
-  //   ESP_MAIL_PRINTF("Connection error, Status Code: %d, Error Code: %d, Reason: %s", smtp.statusCode(), smtp.errorCode(), smtp.errorReason().c_str());
-  //   return;
-  // }
+//   // if (!smtp.connect(&config)){
+//   //   ESP_MAIL_PRINTF("Connection error, Status Code: %d, Error Code: %d, Reason: %s", smtp.statusCode(), smtp.errorCode(), smtp.errorReason().c_str());
+//   //   return;
+//   // }
 
-  // if (!smtp.isLoggedIn()){
-  //   Serial.println("Gagal login akun email");
-  // }
+//   // if (!smtp.isLoggedIn()){
+//   //   Serial.println("Gagal login akun email");
+//   // }
 
-  // else{
-  //   if (smtp.isAuthenticated()) {
-  //     Serial.println("Berhasil login email");
-  //   } else {
-  //     Serial.println("Terhubung ke email tanpa otorisasi");
-  //   }
-  // }
+//   // else{
+//   //   if (smtp.isAuthenticated()) {
+//   //     Serial.println("Berhasil login email");
+//   //   } else {
+//   //     Serial.println("Terhubung ke email tanpa otorisasi");
+//   //   }
+//   // }
 
 
-  // if (!MailClient.sendMail(&smtp, &message)) {
-  //   ESP_MAIL_PRINTF("Error, Status Code: %d, Error Code: %d, Reason: %s", smtp.statusCode(), smtp.errorCode(), smtp.errorReason().c_str());
-  // }
-}
-
-// void smtpCallback(SMTP_Status status){
-//   // hapus memory email jika berhasil terkirim
-//   if (status.success()){
-//     smtp.sendingResult.clear();
-//   }
+//   // if (!MailClient.sendMail(&smtp, &message)) {
+//   //   ESP_MAIL_PRINTF("Error, Status Code: %d, Error Code: %d, Reason: %s", smtp.statusCode(), smtp.errorCode(), smtp.errorReason().c_str());
+//   // }
 // }
 
-// menyimpan kondisi tapai pada database
+// // void smtpCallback(SMTP_Status status){
+// //   // hapus memory email jika berhasil terkirim
+// //   if (status.success()){
+// //     smtp.sendingResult.clear();
+// //   }
+// // }
+
+// // menyimpan kondisi tapai pada database
 // void insertKondisiTapai() {
 //   JSONVar req;
 
@@ -519,13 +596,15 @@ void sendEmail(String text) {
 // void cekKegagalan() {
 //   int lamaJam = getLamaJamFermentasi();
 
-//   float regresiKadarGas = 0.0025 * pow(lamaJam, 2.0) - 0.0397 * lamaJam - 0.1222;
-//   float nilaiPerempat = regresiKadarGas / 4.0;
+//   // = -0,000006 * (x * x) + (0,0013 * x) + 0,002;
+//   float regresiKadarGas = -0.000006 * pow(lamaJam, 2.0) + 0.0013 * lamaJam + 0.002;
+//   regresiKadarGas = regresiKadarGas * 100;
+//   float nilaiPertiga = regresiKadarGas / 3.0;
 
-//   if (lamaJam > 12) {
+//   if (lamaJam > 6) {
 //     // jika kadar gas tidak naik secara signifikan
-//     // if (persentaseKadarGas > (regresiKadarGas + nilaiPerempat) || persentaseKadarGas < (regresiKadarGas - nilaiPerempat)) {
-//     if (persentaseKadarGas < (regresiKadarGas - nilaiPerempat)) {
+//     // if (persentaseKadarGas > (regresiKadarGas + nilaiPertiga) || persentaseKadarGas < (regresiKadarGas - nilaiPertiga)) {
+//     if (persentaseKadarGas < (regresiKadarGas - nilaiPertiga)) {
 //       status = "Gagal";
 //       insertHistory(false);
 //     }
