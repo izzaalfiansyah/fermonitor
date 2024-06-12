@@ -5,4 +5,7 @@ export interface Pengaturan {
     suhu_min: number;
     suhu_max: number;
     running: boolean;
+    auto: boolean;
+    fan_on: boolean;
+    lamp_on: boolean;
 }

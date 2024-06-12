@@ -8,6 +8,7 @@ import supabase from "./utils/supabase";
 import { Histori } from "./types/Histori";
 import { Pengaturan } from "./types/Pengaturan";
 import BarsIcon from "./icons/BarsIcon";
+import AdjusmentIcon from "./icons/AdjusmentIcon";
 
 export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
   const menus = [
@@ -25,6 +26,11 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
       path: "/histori",
       title: "Histori",
       icon: ClockIcon,
+    },
+    {
+      path: "/kontrol",
+      title: "Kontrol",
+      icon: AdjusmentIcon,
     },
     {
       path: "/pengaturan",
@@ -125,7 +131,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
         }
       } else {
         setCanNavigate(true);
-        await checkStatusDevice();
+        // await checkStatusDevice();
       }
     }
   };
