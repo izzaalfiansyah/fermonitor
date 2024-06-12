@@ -117,7 +117,10 @@ export default function () {
           maka proses fermentasi berpotensi gagal.
         </p>
       </div>
-      <div class="bg-white rounded shadow p-5">
+      <div
+        class="bg-white rounded shadow p-5"
+        classList={{ hidden: items().length < 1 }}
+      >
         <canvas ref={canvas} style={{ "max-height": "300px" }}></canvas>
       </div>
       <div class="bg-white rounded shadow p-5">
