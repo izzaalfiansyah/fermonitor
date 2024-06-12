@@ -131,7 +131,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
         }
       } else {
         setCanNavigate(true);
-        // await checkStatusDevice();
+        await checkStatusDevice();
       }
     }
   };

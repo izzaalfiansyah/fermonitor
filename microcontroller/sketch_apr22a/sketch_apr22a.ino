@@ -371,18 +371,31 @@ void runFermentasi() {
     lcd.print(kelembaban, 1);
     lcd.print(" %");
 
-    // menyalakan lampu jika suhu di bawah 30
-    if (suhu <= 30) {
-      digitalWrite(LAMPPIN, LOW);
-    } else {
-      digitalWrite(LAMPPIN, HIGH);
-    }
+    bool otomatis = (bool) pengaturan[0]["auto"];
+    int suhuMin = (int) pengaturan[0]["suhu_min"];
+    int suhuMax = (int) pengaturan[0]["suhu_max"];
 
-    // menyalakan kipas jika suhu di atas 40
-    if (suhu >= 40) {
-      digitalWrite(FANPIN, LOW);
+    // pilihan user menghidupkan kontrol otomatis atau manual
+    if (otomatis) {
+      // menyalakan lampu jika suhu di bawah suhu minimal
+      if (suhu <= suhuMin) {
+        digitalWrite(LAMPPIN, LOW);
+      } else {
+        digitalWrite(LAMPPIN, HIGH);
+      }
+
+      // menyalakan kipas jika suhu di atas suhu maximal
+      if (suhu >= suhuMax) {
+        digitalWrite(FANPIN, LOW);
+      } else {
+        digitalWrite(FANPIN, HIGH);
+      }
     } else {
-      digitalWrite(FANPIN, HIGH);
+      bool lampOn = (bool) pengaturan[0]["lamp_on"];
+      bool fanOn = (bool) pengaturan[0]["fan_on"];
+
+      digitalWrite(LAMPPIN, lampOn ? LOW : HIGH);
+      digitalWrite(FANPIN, fanOn ? LOW : HIGH);
     }
 
     // menentukan data masuk ke pengujian atau tidak berdasarkan jarak jam
