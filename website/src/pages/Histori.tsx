@@ -29,15 +29,11 @@ export default function () {
           Menampilkan hasil fermentasi yang telah dilakukan.
         </p>
         <Table
-          headers={[
-            "Tanggal",
-            "Lama Fermentasi" /*, "Rentang Suhu"*/,
-            "Status",
-          ]}
+          headers={["Tanggal", "Lama Fermentasi", "Rentang Suhu (C)", "Status"]}
           items={items().map((item) => [
             getDates(item.created_at),
             Math.round((item.waktu_akhir - item.waktu_awal) / 3600) + " Jam",
-            // item.rentang_suhu + " C",
+            item.rentang_suhu,
             <span
               class={
                 "uppercase " +
