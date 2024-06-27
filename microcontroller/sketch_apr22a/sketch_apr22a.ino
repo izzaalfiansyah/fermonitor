@@ -466,12 +466,7 @@ float getKadarGas() {
 
 // konversi tegangan ke persen berdasarkan rumus yang telah ditentukan
 float getPersentaseKadarGas(float voltase) {
-  // float m = 6.0 / (1.49 / 0.33);
-  // float b = -m * 0.33;
-  // float persentase = m * voltase + b;
-  // float hasil = constrain(persentase * 100, 0, 100);
-
-  float persentase = 0.0526 * voltase - 0.0174;
+  float persentase = 0.0448 * voltase - 0.0058;
   float hasil = constrain(persentase * 100, 0, 100);
 
   // float persentase = 0.2043 * pow(voltase, 2.0) + 0.0611 * voltase - 0.0249;
@@ -632,7 +627,7 @@ void cekKegagalan() {
   regresiKadarGas = regresiKadarGas * 100;
   float nilaiPertiga = regresiKadarGas / 3.0;
 
-  if (lamaJam > 6) {
+  if (lamaJam > 12) {
     // jika kadar gas tidak naik secara signifikan
     // if (persentaseKadarGas > (regresiKadarGas + nilaiPertiga) || persentaseKadarGas < (regresiKadarGas - nilaiPertiga)) {
     if (persentaseKadarGas < (regresiKadarGas - nilaiPertiga)) {

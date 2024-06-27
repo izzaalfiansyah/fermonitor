@@ -20,8 +20,8 @@
 #define FANPIN 25
 #define BUZZERPIN 23
 
-#define SUPABASE_URL "https://oxmfbobxmqldgthethlz.supabase.co"
-#define SUPABASE_ANON_KEY "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94bWZib2J4bXFsZGd0aGV0aGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDgwNjQ1NDksImV4cCI6MjAyMzY0MDU0OX0.pTDI9CsiN8wthOWhHjM1dONrRP_Hd7BcbwfKgeKGhtU"
+// #define SUPABASE_URL "https://oxmfbobxmqldgthethlz.supabase.co"
+// #define SUPABASE_ANON_KEY "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94bWZib2J4bXFsZGd0aGV0aGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDgwNjQ1NDksImV4cCI6MjAyMzY0MDU0OX0.pTDI9CsiN8wthOWhHjM1dONrRP_Hd7BcbwfKgeKGhtU"
 
 // #define WIFI_SSID "Vivo Y21c"
 // #define WIFI_PASS "12346789"
@@ -172,7 +172,7 @@ void generateServer() {
 
   server.on("/", HTTP_POST, [](AsyncWebServerRequest *request) {
     int params = request->params();
-    for(int i=0;i<params;i++){
+    for(int i = 0; i < params; i++){
       AsyncWebParameter* p = request->getParam(i);
       if(p->isPost()){
         if (p->name() == "ssid") {
@@ -227,9 +227,13 @@ void setup(){
   WIFI_SSID = readFile(ssidPath);
   WIFI_PASS = readFile(passPath);
 
+  Serial.println(WIFI_SSID);
+  Serial.println(WIFI_PASS);
+
   // inisialisasi LCD
   lcd.init();
   lcd.backlight();
+  lcd.clear();
 
   // inisialisasi DHT22
   dht.begin();
@@ -245,10 +249,12 @@ void setup(){
   while (i < duration) {
     int loading = i / ((float) duration) * 100;
 
-    Serial.println("Memuat : " + String(loading) + "%");
+    Serial.println("Memuat: " + String(loading) + "%");
 
     lcd.setCursor(0, 0);
-    lcd.print("Memuat : " + String(loading) + "%");
+    // lcd.print("SSID      : " + String(WIFI_SSID));
+    // lcd.setCursor(0, 1);
+    lcd.print("Memuat    : " + String(loading) + "%");
 
     delay(1000);
     i += 1;
@@ -319,12 +325,15 @@ void loop(){
   //     delay(1000);
   //   }
   // } else {
+  //   Serial.println("Gagal terhubung ke " + WIFI_SSID);
+    
+  //   lcd.clear();
   //   lcd.setCursor(0, 0);
   //   lcd.print("Gagal terhubung");
   //   lcd.setCursor(0, 1);
-  //   lcd.print("ke jaringan!");
+  //   lcd.print("ke " + WIFI_SSID + "!");
 
-  //   Serial.println("Gagal terhubung ke jaringan");
+  //   delay(1000);
   // }
 }
 
@@ -364,19 +373,32 @@ void runFermentasi() {
     lcd.print(kelembaban, 1);
     lcd.print(" %");
 
-    // menyalakan lampu jika suhu di bawah 30
-    if (suhu <= 30) {
-      digitalWrite(LAMPPIN, LOW);
-    } else {
-      digitalWrite(LAMPPIN, HIGH);
-    }
+    // bool otomatis = (bool) pengaturan[0]["auto"];
+    // int suhuMin = (int) pengaturan[0]["suhu_min"];
+    // int suhuMax = (int) pengaturan[0]["suhu_max"];
 
-    // menyalakan kipas jika suhu di atas 40
-    if (suhu >= 40) {
-      digitalWrite(FANPIN, LOW);
-    } else {
-      digitalWrite(FANPIN, HIGH);
-    }
+    // pilihan user menghidupkan kontrol otomatis atau manual
+    // if (otomatis) {
+      // menyalakan lampu jika suhu di bawah suhu minimal
+      if (suhu <= 35) {
+        digitalWrite(LAMPPIN, LOW);
+      } else {
+        digitalWrite(LAMPPIN, HIGH);
+      }
+
+      // menyalakan kipas jika suhu di atas suhu maximal
+      if (suhu >= 40) {
+        digitalWrite(FANPIN, LOW);
+      } else {
+        digitalWrite(FANPIN, HIGH);
+      }
+    // } else {
+    //   bool lampOn = (bool) pengaturan[0]["lamp_on"];
+    //   bool fanOn = (bool) pengaturan[0]["fan_on"];
+
+    //   digitalWrite(LAMPPIN, lampOn ? LOW : HIGH);
+    //   digitalWrite(FANPIN, fanOn ? LOW : HIGH);
+    // }
 
     // menentukan data masuk ke pengujian atau tidak berdasarkan jarak jam
     // long unsigned epochTimeNow = timeClient.getEpochTime();
@@ -446,15 +468,10 @@ float getKadarGas() {
 
 // konversi tegangan ke persen berdasarkan rumus yang telah ditentukan
 float getPersentaseKadarGas(float voltase) {
-  // float m = 6.0 / (1.49 / 0.33);
-  // float b = -m * 0.33;
-  // float persentase = m * voltase + b;
-  // float hasil = constrain(persentase * 100, 0, 100);
-
-  float persentase = 0.0526 * voltase - 0.0174;
+  float persentase = 0.0448 * voltase - 0.0058;
   float hasil = constrain(persentase * 100, 0, 100);
 
-  // float persentase = 0.1727 * pow(voltase, 2.0) + 0.1805 * voltase - 0.137;
+  // float persentase = 0.2043 * pow(voltase, 2.0) + 0.0611 * voltase - 0.0249;
   // float hasil = constrain(persentase * 100, 0, 100);
 
   return hasil;
