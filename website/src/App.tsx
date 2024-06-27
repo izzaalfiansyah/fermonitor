@@ -42,6 +42,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
   const [lastHistori, setLastHistori] = createSignal<Histori | null>(null);
   const [canNavigate, setCanNavigate] = createSignal<boolean>(false);
   const [showSidebar, setShowSidebar] = createSignal<boolean>(false);
+  const [pengaturan, setPengaturan] = createSignal<Pengaturan>();
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -70,10 +71,17 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
   };
 
   const saveHistori = async () => {
+    const auto = pengaturan()?.auto;
+    const suhu_min = pengaturan()?.suhu_min;
+    const suhu_max = pengaturan()?.suhu_max;
+
+    const rentang_suhu = auto ? suhu_min + " - " + suhu_max : "-";
+
     await supabase
       .from("histori_fermentasi")
       .update({
         selesai: true,
+        rentang_suhu,
       })
       .eq("id", lastHistori()?.id);
 
@@ -124,6 +132,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
     const { data } = await supabase.from("pengaturan").select("*").limit(1);
     if (data) {
       const item: Pengaturan = data[0];
+      setPengaturan(item);
 
       if (!item.running) {
         if (location.pathname != "/") {
