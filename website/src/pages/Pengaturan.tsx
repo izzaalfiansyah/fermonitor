@@ -66,6 +66,7 @@ export default function () {
               placeholder="Masukkan Email"
               value={req()?.email}
               onInput={(e) => handleReqChange("email", e.target.value)}
+              required
             />
           </div>
           <div class="mb-3">
@@ -76,6 +77,7 @@ export default function () {
               placeholder="Masukkan Username / Nomor Telegram"
               value={req()?.telepon}
               onInput={(e) => handleReqChange("telepon", e.target.value)}
+              required
             />
           </div>
         </div>
