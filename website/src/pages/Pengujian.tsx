@@ -14,7 +14,7 @@ export default function () {
     const { data } = await supabase
       .from("kondisi_tapai")
       .select("*")
-      .eq("pengujian", true)
+      // .eq("pengujian", true)
       .order("created_time", { ascending: false });
 
     setItems(data as KondisiTapai[]);
