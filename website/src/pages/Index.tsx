@@ -33,16 +33,16 @@ export default function () {
 
   const getData = async () => {
     const { data } = await supabase
-      .from("kondisi_tapai")
+      .from("realtime_data")
       .select("*")
-      .order("created_time", { ascending: false })
-      .limit(10);
+      .eq("id", 1)
+      .limit(1);
 
     if (data != null && data.length > 0) {
-      const lastItem = data[0];
+      const item = data[0];
 
-      setSuhu(lastItem.suhu);
-      setKelembaban(lastItem.kelembaban);
+      setSuhu(item.suhu);
+      setKelembaban(item.kelembaban);
       setKadarGas([]);
       setTimeStamps([]);
 
@@ -58,6 +58,33 @@ export default function () {
         });
       });
     }
+
+    // const { data } = await supabase
+    //   .from("kondisi_tapai")
+    //   .select("*")
+    //   .order("created_time", { ascending: false })
+    //   .limit(10);
+
+    // if (data != null && data.length > 0) {
+    //   const lastItem = data[0];
+
+    //   setSuhu(lastItem.suhu);
+    //   setKelembaban(lastItem.kelembaban);
+    //   setKadarGas([]);
+    //   setTimeStamps([]);
+
+    //   data.forEach((item) => {
+    //     setKadarGas((val) => {
+    //       val.push(item.kadar_gas.toString().slice(0, 4));
+    //       return val;
+    //     });
+
+    //     setTimeStamps((val) => {
+    //       val.push(getTimes(item.created_time));
+    //       return val;
+    //     });
+    //   });
+    // }
   };
 
   const renderChart = async () => {
