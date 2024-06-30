@@ -63,6 +63,15 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
   const deleteAllData = async () => {
     await supabase.from("pengaturan").update({ running: false }).eq("id", 1);
     await supabase.from("kondisi_tapai").delete().neq("id", "0");
+    await supabase
+      .from("realtime_data")
+      .update({
+        kadar_gas: 0,
+        kelembaban: 0,
+        suhu: 0,
+        created_time: 0,
+      })
+      .eq("id", 1);
 
     setLastHistori(null);
 
