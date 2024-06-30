@@ -210,6 +210,8 @@ public:
 };
 
 void setup(){
+  status = "Menunggu";
+
   pinMode(MQPIN, INPUT);
   pinMode(LAMPPIN, OUTPUT);
   pinMode(FANPIN, OUTPUT);
@@ -300,6 +302,7 @@ void loop(){
       digitalWrite(LAMPPIN, HIGH);
       digitalWrite(FANPIN, HIGH);
       digitalWrite(BUZZERPIN, LOW);
+      status = "Menunggu";
 
       Serial.println("Mesin Siap!");
 

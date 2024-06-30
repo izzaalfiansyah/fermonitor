@@ -8,6 +8,7 @@ import { Chart, registerables } from "chart.js";
 export default function () {
   let canvas: any;
   const [items, setItems] = createSignal<KondisiTapai[]>([]);
+  const [labels, setLabels] = createSignal<any>([]);
 
   const getData = async () => {
     const { data } = await supabase
@@ -54,6 +55,8 @@ export default function () {
 
       j += 1;
     }
+
+    setLabels(labels);
 
     new Chart(canvas, {
       type: "line",
@@ -122,14 +125,23 @@ export default function () {
         classList={{ hidden: items().length < 1 }}
       >
         <canvas ref={canvas} style={{ "max-height": "300px" }}></canvas>
+        <div class="text-sm text-center">Jam Ke-</div>
       </div>
       <div class="bg-white rounded shadow p-5">
         <Table
           class="my-5"
-          headers={["Tanggal", "Jam", "Kadar Gas", "Suhu", "Kelembaban"]}
-          items={items().map((item) => [
+          headers={[
+            "Tanggal",
+            "Waktu",
+            "Jam Ke-",
+            "Kadar Gas",
+            "Suhu",
+            "Kelembaban",
+          ]}
+          items={items().map((item, i) => [
             getDates(item.created_time),
             getTimes(item.created_time).slice(0, 5),
+            labels()[i],
             item.kadar_gas.toString().slice(0, 4) + " %",
             item.suhu.toString().slice(0, 4) + " C",
             item.kelembaban.toString().slice(0, 4) + " %",
