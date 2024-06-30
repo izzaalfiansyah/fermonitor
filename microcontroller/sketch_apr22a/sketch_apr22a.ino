@@ -563,13 +563,15 @@ void insertKondisiTapai() {
   req["suhu"] = (float) suhu;
   req["kelembaban"] = (float) kelembaban;
   req["kadar_gas"] = (float) persentaseKadarGas;
-  req["pengujian"] = (bool) pengujian;
+  // req["pengujian"] = (bool) pengujian;
   req["created_time"] = (int) timeClient.getEpochTime();
 
   String json = JSON.stringify(req);
-  db.insert("kondisi_tapai", json, false);
+  db.from("realtime_data").eq("id", "1").doUpdate(json);
+  // db.insert("kondisi_tapai", json, false);
   
   if (pengujian == true) {
+    db.insert("kondisi_tapai", json, false);
     getDataPengujian();
     cekKegagalan();
   }
@@ -616,6 +618,8 @@ void cekKematangan() {
   if (dataPengujian.length() > 0) {
     if (persentaseKadarGas >= 5.28 || lamaJam >= 72) {
       status = "Matang";
+      pengujian = true;
+      insertKondisiTapai();
       insertHistory(true);
     }
   }
@@ -642,6 +646,7 @@ void cekKegagalan() {
 
 // mengambil data pengujian
 void getDataPengujian() {
-  String json = db.from("kondisi_tapai").select("*").eq("pengujian", "TRUE").order("created_time", "asc", true).doSelect();
+  String json = db.from("kondisi_tapai").select("*").order("created_time", "asc", true).doSelect();
+  // String json = db.from("kondisi_tapai").select("*").eq("pengujian", "TRUE").order("created_time", "asc", true).doSelect();
   dataPengujian = JSON.parse(json);
 }
