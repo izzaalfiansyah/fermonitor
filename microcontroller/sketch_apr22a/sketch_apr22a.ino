@@ -362,6 +362,14 @@ void runFermentasi() {
   suhu = dht.readTemperature();
   kelembaban = dht.readHumidity();
 
+  if (isnan(suhu)) {
+    suhu = 0;
+  }
+  
+  if (isnan(kelembaban)) {
+    kelembaban = 0;
+  }
+
   if (suhu != 25.5 && kelembaban != 25.5) {
     // menampilkan suhu dan kelembaban pada LCD
     lcd.clear();
