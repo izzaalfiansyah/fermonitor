@@ -412,6 +412,8 @@ void runFermentasi() {
     // menentukan data masuk ke pengujian atau tidak berdasarkan jarak jam
     long unsigned epochTimeNow = timeClient.getEpochTime();
 
+    getDataPengujian();
+
     if (dataPengujian.length() > 0) {
       JSONVar dataPengujianTerakhir = dataPengujian[dataPengujian.length() - 1];
       int created_time = dataPengujianTerakhir["created_time"];
@@ -424,6 +426,8 @@ void runFermentasi() {
       } else {
         pengujian = false;
       }
+    } else {
+      pengujian = true;
     }
 
     getDebugging();

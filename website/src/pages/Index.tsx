@@ -169,6 +169,25 @@ export default function () {
     window.location.reload();
   };
 
+  const cancelFermentasi = async () => {
+    const isOk = confirm("anda yakin untuk membatalkan proses fermentasi?");
+    if (isOk) {
+      await supabase.from("pengaturan").update({ running: false }).eq("id", 1);
+      await supabase.from("kondisi_tapai").delete().neq("id", "0");
+      await supabase
+        .from("realtime_data")
+        .update({
+          kadar_gas: 0,
+          kelembaban: 0,
+          suhu: 0,
+          created_time: 0,
+        })
+        .eq("id", 1);
+
+      window.location.reload();
+    }
+  };
+
   onMount(async () => {
     await getPengaturan();
     Chart.register(...registerables);
@@ -205,7 +224,7 @@ export default function () {
           </div>
         </Show>
         <div class={"space-y-5" + (kadarGas().length > 0 ? "" : "hidden")}>
-          <div class="flex flex-wrap gap-5">
+          <div class="flex flex-wrap gap-5 mb-5">
             <div
               class={
                 (lastHistori()?.selesai == false
@@ -238,6 +257,16 @@ export default function () {
                 </div>
               </div>
             </div>
+          </div>
+          <div class="bg-white rounded p-5 shadow mb-5">
+            Terjadi kesalahan dan ingin membatalkan fermentasi? Klik di{" "}
+            <a
+              href="javascript:void(0);"
+              class="text-blue-500"
+              onClick={cancelFermentasi}
+            >
+              sini
+            </a>
           </div>
           <div class="bg-white rounded shadow p-5">
             <div class="text-xl">Grafik Kadar Gas</div>
