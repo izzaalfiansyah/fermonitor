@@ -10,6 +10,7 @@
 #include <ESPAsyncWebServer.h>
 #include <DNSServer.h>
 #include <AsyncTCP.h>
+// #include <ESP_Mail_Client.h>
 #include "LittleFS.h"
 
 #define BOARD "ESP-32"
@@ -21,6 +22,11 @@
 
 #define SUPABASE_URL "https://oxmfbobxmqldgthethlz.supabase.co"
 #define SUPABASE_ANON_KEY "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94bWZib2J4bXFsZGd0aGV0aGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDgwNjQ1NDksImV4cCI6MjAyMzY0MDU0OX0.pTDI9CsiN8wthOWhHjM1dONrRP_Hd7BcbwfKgeKGhtU"
+
+// #define SMTP_HOST "sandbox.smtp.mailtrap.io"
+// #define SMTP_PORT 2525
+// #define AUTHOR_EMAIL "16d58b0c89cba1"
+// #define AUTHOR_PASSWORD "f077a3dc3e2f84"
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 DHT dht(DHTPIN, 22);
@@ -253,6 +259,11 @@ void setup(){
   generateServer();
 
   if (WiFi.status() == WL_CONNECTED) {
+    // inisialisasi mail client
+    // MailClient.networkReconnect(true);
+    // smtp.debug(0);
+    // smtp.callback(smtpCallback);
+
     // inisialisasi waktu
     timeClient.begin();
 
@@ -496,7 +507,59 @@ void callUser(bool matang = true) {
 }
 
 void sendEmail(String text) {
+  // Session_Config config;
+  // config.server.host_name = SMTP_HOST;
+  // config.server.port = SMTP_PORT;
+  // config.login.email = AUTHOR_EMAIL;
+  // config.login.password = AUTHOR_PASSWORD;
+  // config.login.user_domain = "";
+  // config.time.ntp_server = F("pool.ntp.org,time.nist.gov");
+  // config.time.gmt_offset = 7;
+  // config.time.day_light_offset = 0;
+
+  // SMTP_Message message;
+  // String emailRecipient = pengaturan[0]["email"];
+  // message.sender.name = F("Fermonitor");
+  // message.sender.email = "fermonitor@official.com";
+  // message.subject = "Status Fermentasi Tapai";
+  // message.addRecipient(emailRecipient, emailRecipient);
+
+  // message.text.content = text.c_str();
+  // message.text.charSet = "us-ascii";
+  // message.text.transfer_encoding = Content_Transfer_Encoding::enc_7bit;
+
+  // message.priority = esp_mail_smtp_priority::esp_mail_smtp_priority_low;
+  // message.response.notify = esp_mail_smtp_notify_success | esp_mail_smtp_notify_failure | esp_mail_smtp_notify_delay;
+
+  // if (!smtp.connect(&config)){
+  //   ESP_MAIL_PRINTF("Connection error, Status Code: %d, Error Code: %d, Reason: %s", smtp.statusCode(), smtp.errorCode(), smtp.errorReason().c_str());
+  //   return;
+  // }
+
+  // if (!smtp.isLoggedIn()){
+  //   Serial.println("Gagal login akun email");
+  // }
+
+  // else{
+  //   if (smtp.isAuthenticated()) {
+  //     Serial.println("Berhasil login email");
+  //   } else {
+  //     Serial.println("Terhubung ke email tanpa otorisasi");
+  //   }
+  // }
+
+
+  // if (!MailClient.sendMail(&smtp, &message)) {
+  //   ESP_MAIL_PRINTF("Error, Status Code: %d, Error Code: %d, Reason: %s", smtp.statusCode(), smtp.errorCode(), smtp.errorReason().c_str());
+  // }
 }
+
+// void smtpCallback(SMTP_Status status){
+//   // hapus memory email jika berhasil terkirim
+//   if (status.success()){
+//     smtp.sendingResult.clear();
+//   }
+// }
 
 // menyimpan kondisi tapai pada database
 void insertKondisiTapai() {
