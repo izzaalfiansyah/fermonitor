@@ -3,7 +3,7 @@
 // #include <ESP32_Supabase.h>
 // #include <WiFi.h>
 // #include <WiFiUdp.h>
-// #include <Arduino_JSON.h>
+#include <Arduino_JSON.h>
 // #include <assert.h>
 // #include <NTPClient.h>
 // #include <Callmebot_ESP32.h>
@@ -52,7 +52,7 @@ float persentaseKadarGas;
 bool pengujian = true;
 float kadarGasVoltase;
 String status = "Menunggu";
-// JSONVar dataPengujian;
+JSONVar dataPengujian;
 // JSONVar pengaturan;
 
 const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
@@ -168,6 +168,10 @@ void generateServer() {
   
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "text/html", index_html);
+  });
+
+  server.on("/debug", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(200, "application/json", JSON.stringify(dataPengujian));
   });
 
   server.on("/", HTTP_POST, [](AsyncWebServerRequest *request) {
@@ -361,6 +365,14 @@ void runFermentasi() {
   suhu = dht.readTemperature();
   kelembaban = dht.readHumidity();
 
+  if (isnan(suhu)) {
+    suhu = 0;
+  }
+  
+  if (isnan(kelembaban)) {
+    kelembaban = 0;
+  }
+
   if (suhu != 25.5 && kelembaban != 25.5) {
     // menampilkan suhu dan kelembaban pada LCD
     lcd.clear();
@@ -444,11 +456,39 @@ void runFermentasi() {
   }
 }
 
+long waktuSekarang = 0;
+long waktuLama = 0;
+long waktuKe = 0;
+
 void getDebugging() {
   Serial.println("Voltase Kadar Gas : " + String(kadarGasVoltase));
   Serial.println("Persentase Kadar Gas : " + String(persentaseKadarGas) + " %");
   Serial.println("Suhu : " + String(suhu) + " C");
   Serial.println("Kelembaban : " + String(kelembaban) + " %");
+
+  waktuSekarang = millis() / 1000;
+  int jarakWaktu = waktuSekarang - waktuLama;
+  int lamaJam = jarakWaktu / 3600;
+  int durasi = 1;
+
+  JSONVar req;
+  req["kadar_gas"] = persentaseKadarGas;
+  req["suhu"] = suhu;
+  req["kelembaban"] = kelembaban;
+  req["jam_ke"] = waktuKe;
+
+  if (dataPengujian.length() <= 0) {
+    dataPengujian[0] = req;
+    waktuKe += durasi;
+  }
+
+  if (lamaJam >= durasi) {
+    waktuLama = waktuSekarang;
+    waktuKe += durasi;
+
+    dataPengujian[dataPengujian.length()] = req;
+  }
+
 }
 
 // mendapatkana nilai rata-rata kadar gas dari 100 data sampel yang diambil
