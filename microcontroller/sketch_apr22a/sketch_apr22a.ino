@@ -421,7 +421,7 @@ void runFermentasi() {
       int epochTimeDiff = epochTimeNow - created_time;
       int jam = epochTimeDiff / 3600; // 1 jam = 3600 detik;
       
-      if (jam >= 6) {
+      if (jam >= 1) {
         pengujian = true;
       } else {
         pengujian = false;
@@ -646,7 +646,7 @@ void cekKegagalan() {
   regresiKadarGas = regresiKadarGas * 100;
   float nilaiPertiga = regresiKadarGas / 3.0;
 
-  if (lamaJam > 12) {
+  if (lamaJam >= 18) {
     // jika kadar gas tidak naik secara signifikan
     // if (persentaseKadarGas > (regresiKadarGas + nilaiPertiga) || persentaseKadarGas < (regresiKadarGas - nilaiPertiga)) {
     if (persentaseKadarGas < (regresiKadarGas - nilaiPertiga)) {
