@@ -142,11 +142,11 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
       //   .order("created_time", { ascending: false })
       //   .limit(1);
 
-      // if (lastData1![0] == lastData2![0]) {
-      //   alert("Device offline!");
-      // } else if (lastData1![0].created_time == lastData2![0].created_time) {
-      //   alert("Device offline!");
-      // }
+      if (lastData1![0] == lastData2![0]) {
+        alert("Device offline!");
+      } else if (lastData1![0].created_time == lastData2![0].created_time) {
+        alert("Device offline!");
+      }
 
       await checkStatusDevice();
     }
@@ -160,7 +160,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
 
       if (!item.running) {
         if (location.pathname != "/") {
-          // navigate("/");
+          navigate("/");
         }
       } else {
         setCanNavigate(true);
