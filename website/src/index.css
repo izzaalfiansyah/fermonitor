@@ -11,3 +11,15 @@
 .input {
     @apply border border-gray-200 rounded h-12 w-full block transition outline-none px-3;
 }
+
+.animate-wiggle {
+    animation: wiggle .35s infinite alternate-reverse;
+}
+
+@keyframes wiggle {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(20deg); }
+    50% { transform: rotate(0eg); }
+    75% { transform: rotate(-20deg); }
+    100% { transform: rotate(0deg); }
+}

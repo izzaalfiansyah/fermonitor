@@ -9,6 +9,7 @@ import { Histori } from "./types/Histori";
 import { Pengaturan } from "./types/Pengaturan";
 import BarsIcon from "./icons/BarsIcon";
 import AdjusmentIcon from "./icons/AdjusmentIcon";
+import BellAlert from "./icons/BellAlert";
 
 export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
   const menus = [
@@ -52,7 +53,6 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
       .from("histori_fermentasi")
       .select("*")
       .limit(1)
-      .eq("selesai", false)
       .order("created_at", { ascending: false });
 
     if (!!data) {
@@ -60,8 +60,8 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
     }
   };
 
-  const deleteAllData = async () => {
-    await supabase.from("pengaturan").update({ running: false }).eq("id", 1);
+  const fermentasiSelesai = async () => {
+    // await supabase.from("pengaturan").update({ running: false }).eq("id", 1);
     await supabase.from("kondisi_tapai").delete().neq("id", "0");
     await supabase
       .from("realtime_data")
@@ -74,9 +74,6 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
       .eq("id", 1);
 
     setLastHistori(null);
-
-    window.alert("Aksi berhasil dilakukan");
-    window.location.reload();
   };
 
   const saveHistori = async () => {
@@ -94,7 +91,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
       })
       .eq("id", lastHistori()?.id);
 
-    await deleteAllData();
+    await fermentasiSelesai();
   };
 
   const noSaveHistori = async () => {
@@ -103,7 +100,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
       .delete()
       .eq("id", lastHistori()?.id);
 
-    await deleteAllData();
+    await fermentasiSelesai();
   };
 
   const checkStatusDevice = async () => {
@@ -142,13 +139,11 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
       //   .order("created_time", { ascending: false })
       //   .limit(1);
 
-      if (lastData1![0] == lastData2![0]) {
-        alert("Device offline!");
-      } else if (lastData1![0].created_time == lastData2![0].created_time) {
-        alert("Device offline!");
-      }
-
-      await checkStatusDevice();
+      // if (lastData1![0] == lastData2![0]) {
+      //   alert("Device offline!");
+      // } else if (lastData1![0].created_time == lastData2![0].created_time) {
+      //   alert("Device offline!");
+      // }
     }
   };
 
@@ -165,8 +160,14 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
       } else {
         setCanNavigate(true);
         await checkStatusDevice();
+        await checkPengaturan();
       }
     }
+  };
+
+  const turnOffBuzzer = async () => {
+    await supabase.from("pengaturan").update({ buzzer_on: false }).eq("id", 1);
+    await checkPengaturan();
   };
 
   const toggleSidebar = () => {
@@ -186,9 +187,11 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
         <div class="text-xl font-medium uppercase">
           <span class="text-primary">Ferm</span>onitor
         </div>
-        <A href="/pengaturan">
-          <SettingIcon class="w-6 h-6" />
-        </A>
+        <div class="space-x-5 flex flex-row">
+          <A href="/pengaturan">
+            <SettingIcon class="w-6 h-6" />
+          </A>
+        </div>
       </nav>
       <div class="grow relative">
         <div
@@ -219,8 +222,11 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
       </div>
 
       <Switch>
-        <Match when={!!lastHistori()}>
-          <div class="bg-black bg-opacity-25 fixed top-0 left-0 right-0 bottom-0 z-[500] flex items-center justify-center p-5">
+        <Match when={!!lastHistori() && !lastHistori()?.selesai}>
+          <div
+            class="bg-black bg-opacity-25 fixed top-0 left-0 right-0 bottom-0 z-[500] items-center justify-center p-5 hidden"
+            classList={{ "!flex": !lastHistori()?.selesai }}
+          >
             <div class="bg-white rounded shadow p-5 w-full lg:w-1/2">
               <div class="text-xl mb-5">Pemberitahuan</div>
               Fermentasi tapai telah dilakukan dengan hasil{" "}
@@ -257,6 +263,19 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
           </div>
         </Match>
       </Switch>
+      <button
+        type="button"
+        class="fixed bottom-10 right-10 transform transition flex p-2 flex-row-reverse items-center inline-block overflow-x-hidden"
+        classList={{ "!translate-x-[50vh]": !pengaturan()?.buzzer_on }}
+        onClick={turnOffBuzzer}
+      >
+        <div class="bg-blue-500 z-10 rounded-full h-18 w-18 flex items-center justify-center p-3.5 peer animate-bounce mt-3.5">
+          <BellAlert class="text-white w-8 h-8 animate-wiggle" />
+        </div>
+        <div class="bg-white rounded-full p-3.5 shadow px-8 mr-3 transform transition translate-x-[50vh] peer-hover:translate-x-0">
+          Matikan alarm buzzer
+        </div>
+      </button>
     </div>
   );
 }

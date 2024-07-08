@@ -9,4 +9,5 @@ export interface Pengaturan {
     fan_on: boolean;
     lamp_on: boolean;
     buzzer_timer: number;
+    buzzer_on: boolean;
 }
