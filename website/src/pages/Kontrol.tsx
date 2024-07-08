@@ -40,34 +40,63 @@ export default function () {
     await getData();
   };
 
+  const getSuhu = () => {
+    let suhu = [];
+    for (let i = 30; i <= 40; i++) {
+      suhu.push(i);
+    }
+
+    return suhu;
+  };
+
   onMount(async () => {
     await getData();
   });
 
   return (
     <div class="space-y-5">
-      <div class="bg-white rounded p-5 shadow">
-        <div class="text-xl">Kontrol Alat</div>
-        <p class="text-sm">
-          Pemilik bisa mengatur environment untuk pengendalian suhu secara
-          otomatis atau secara manual
-        </p>
-        <div class="my-5">
-          <label class="inline-flex items-center cursor-pointer mt-2">
-            <input
-              type="checkbox"
-              checked={req()?.auto}
-              onChange={(e) => {
-                handleReqChange("auto", e.currentTarget.checked);
-                handleSubmit();
-              }}
-              class="sr-only peer"
-            />
-            <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-            <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">
-              {req()?.auto ? "Otomatis" : "Manual"}
-            </span>
-          </label>
+      <div class="grid lg:grid-cols-2 gap-5">
+        <div class="bg-white shadow p-5 rounded">
+          <div class="text-xl">Kontrol Alarm</div>
+          <p class="text-sm">Matikan buzzer alarm setelah selang waktu</p>
+          <select
+            value={parseInt(req()?.buzzer_timer as any)}
+            onChange={(e) => {
+              console.log(e.currentTarget.value);
+              handleReqChange("buzzer_timer", e.currentTarget.value);
+              handleSubmit();
+            }}
+            class="input max-w-xl mt-3"
+          >
+            <option value="15">15 detik</option>
+            <option value="30">30 detik</option>
+            <option value="60">1 menit</option>
+            <option value={(60 * 2).toString()}>2 menit</option>
+            <option value={(60 * 5).toString()}>5 menit</option>
+          </select>
+        </div>
+        <div class="bg-white rounded p-5 shadow">
+          <div class="text-xl">Kontrol Alat</div>
+          <p class="text-sm">
+            Atur pengendalian suhu secara otomatis atau secara manual
+          </p>
+          <div class="mt-3">
+            <label class="inline-flex items-center cursor-pointer mt-2">
+              <input
+                type="checkbox"
+                checked={req()?.auto}
+                onChange={(e) => {
+                  handleReqChange("auto", e.currentTarget.checked);
+                  handleSubmit();
+                }}
+                class="sr-only peer"
+              />
+              <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+              <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">
+                {req()?.auto ? "Otomatis" : "Manual"}
+              </span>
+            </label>
+          </div>
         </div>
       </div>
       <Show
@@ -128,13 +157,13 @@ export default function () {
                   <select
                     value={req()?.suhu_min}
                     onChange={(e) => {
-                      handleReqChange("suhu_min", e.target.value);
+                      handleReqChange("suhu_min", e.currentTarget.value);
                       handleSubmit();
                     }}
                     class="input"
                   >
-                    {Array.from({ length: 11 }).map((_, i) => (
-                      <option value={i + 30}>{i + 30}</option>
+                    {getSuhu().map((i) => (
+                      <option value={i}>{i}</option>
                     ))}
                   </select>
                 </div>
@@ -143,13 +172,13 @@ export default function () {
                   <select
                     value={req()?.suhu_max}
                     onChange={(e) => {
-                      handleReqChange("suhu_max", e.target.value);
+                      handleReqChange("suhu_max", e.currentTarget.value);
                       handleSubmit();
                     }}
                     class="input"
                   >
-                    {Array.from({ length: 11 }).map((_, i) => (
-                      <option value={i + 30}>{i + 30}</option>
+                    {getSuhu().map((i) => (
+                      <option value={i}>{i}</option>
                     ))}
                   </select>
                 </div>

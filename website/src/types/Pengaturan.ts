@@ -8,4 +8,5 @@ export interface Pengaturan {
     auto: boolean;
     fan_on: boolean;
     lamp_on: boolean;
+    buzzer_timer: number;
 }

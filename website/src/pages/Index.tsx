@@ -14,6 +14,7 @@ export default function () {
   const [kelembaban, setKelembaban] = createSignal<number>(0);
   const [kadarGas, setKadarGas] = createSignal<number[]>([]);
   const [timeStamps, setTimeStamps] = createSignal<any[]>([]);
+  const [lamaJam, setLamaJam] = createSignal<number>();
 
   const [lastHistori, setLastHistori] = createSignal<Histori | null>(null);
   const [pengaturan, setPengaturan] = createSignal<Pengaturan | null>(null);
@@ -29,6 +30,37 @@ export default function () {
     if (!!data) {
       setLastHistori(data[0]);
     }
+  };
+
+  const getLamaFermentasi = async () => {
+    const { data: dataAwals } = await supabase
+      .from("kondisi_tapai")
+      .select("created_time")
+      .limit(1)
+      .order("created_time", { ascending: true });
+
+    const { data: dataAkhirs } = await supabase
+      .from("kondisi_tapai")
+      .select("created_time")
+      .limit(1)
+      .order("created_time", { ascending: false });
+
+    type CData = {
+      created_time: number;
+    };
+
+    let lama = 0;
+
+    console.log(dataAwals);
+
+    if (dataAwals?.length) {
+      const dataAwal: CData = dataAwals![0];
+      const dataAkhir: CData = dataAkhirs![0];
+
+      lama = dataAkhir.created_time - dataAwal.created_time;
+    }
+
+    setLamaJam(Math.round(lama / 3600));
   };
 
   const getData = async () => {
@@ -130,10 +162,24 @@ export default function () {
               display: true,
               title: {
                 display: true,
-                text: "Nilai",
+                text: "Kadar Gas Alkohol",
               },
               min: 0,
               max: 10,
+              ticks: {
+                callback: (val) => {
+                  return val + "%";
+                },
+              },
+            },
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label(tooltipItem) {
+                  return "Kadar Gas: " + tooltipItem.parsed.y + "%";
+                },
+              },
             },
           },
         },
@@ -152,6 +198,7 @@ export default function () {
 
     setTimeout(async () => {
       await renderChart();
+      await getLamaFermentasi();
       await getLastHistori();
     }, 4000);
   };
@@ -192,6 +239,7 @@ export default function () {
     await getPengaturan();
     Chart.register(...registerables);
     await renderChart();
+    await getLamaFermentasi();
     await getLastHistori();
   });
 
@@ -224,40 +272,32 @@ export default function () {
           </div>
         </Show>
         <div class={"space-y-5" + (kadarGas().length > 0 ? "" : "hidden")}>
-          <div class="flex flex-wrap gap-5 mb-5">
+          <div class="mb-5">
             <div
               class={
                 (lastHistori()?.selesai == false
                   ? lastHistori()?.berhasil
                     ? "bg-green-500"
                     : "bg-red-500"
-                  : "bg-orange-500") +
-                " lg:w-1/2 w-full h-52 rounded shadow text-white flex items-center justify-center"
+                  : "bg-orange-500") + " rounded shadow text-white p-10"
               }
             >
-              <div class="uppercase text-3xl">
-                {lastHistori()?.selesai == false
-                  ? lastHistori()?.berhasil
-                    ? "Matang"
-                    : "Gagal"
-                  : "Menunggu"}
+              <div class="text-3xl">
+                Status Fermentasi:{" "}
+                <span class="font-semibold">
+                  {lastHistori()?.selesai == false
+                    ? lastHistori()?.berhasil
+                      ? "Matang"
+                      : "Gagal"
+                    : "Menunggu"}
+                </span>
               </div>
-            </div>
-            <div class="grid grid-cols-2 grow gap-5 ">
-              <div class="bg-white rounded shadow min-h-24 flex flex-col items-center justify-center py-8">
-                <EyeDropperIcon class="w-12 h-12 inline-block" />
-                <div class="text-3xl mt-5">
-                  {suhu().toString().slice(0, 4)} °C
-                </div>
-              </div>
-              <div class="bg-white rounded shadow min-h-24 flex flex-col items-center justify-center py-8">
-                <BeakerIcon class="w-12 h-12 inline-block" />
-                <div class="text-3xl mt-5">
-                  {kelembaban().toString().slice(0, 4)} %
-                </div>
+              <div class="mt-1">
+                <div class="text-base">Waktu Berlalu : {lamaJam()} jam</div>
               </div>
             </div>
           </div>
+
           <div class="bg-white rounded p-5 shadow mb-5">
             Terjadi kesalahan dan ingin membatalkan fermentasi? Klik di{" "}
             <a
@@ -268,9 +308,40 @@ export default function () {
               sini
             </a>
           </div>
+
+          <div class="grid lg:grid-cols-2 grow gap-5 mb-5">
+            <div class="bg-white rounded shadow min-h-24 flex flex-row items-center gap-5 p-5">
+              <div class="p-3 rounded bg-yellow-400">
+                <EyeDropperIcon class="w-12 h-12 inline-block text-white" />
+              </div>
+              <div>
+                <div class="text-base">Temperatur</div>
+                <div class="text-3xl mt-2">
+                  {suhu().toString().slice(0, 4)} C
+                </div>
+              </div>
+            </div>
+            <div class="bg-white rounded shadow min-h-24 flex flex-row items-center gap-5 p-5">
+              <div class="p-3 rounded bg-blue-400">
+                <BeakerIcon class="w-12 h-12 inline-block text-white" />
+              </div>
+              <div>
+                <div class="text-base">Kelembaban</div>
+                <div class="text-3xl mt-2">
+                  {kelembaban().toString().slice(0, 4)} %
+                </div>
+              </div>
+            </div>
+          </div>
           <div class="bg-white rounded shadow p-5">
             <div class="text-xl">Grafik Kadar Gas</div>
             <canvas ref={canvas} style={{ "max-height": "400px" }}></canvas>
+            <div
+              class="text-sm text-center -mt-4"
+              style={{ "font-family": "Arial" }}
+            >
+              Waktu Fermentasi
+            </div>
           </div>
         </div>
       </div>
