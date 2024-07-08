@@ -15,8 +15,9 @@ export default function () {
   const [kadarGas, setKadarGas] = createSignal<number[]>([]);
   const [timeStamps, setTimeStamps] = createSignal<any[]>([]);
   const [lamaJam, setLamaJam] = createSignal<number>();
+  const [waktuAwal, setWaktuAwal] = createSignal<number>();
 
-  const [lastHistori, setLastHistori] = createSignal<Histori | null>(null);
+  const [lastHistori, setLastHistori] = createSignal<Histori>();
   const [pengaturan, setPengaturan] = createSignal<Pengaturan | null>(null);
 
   const getLastHistori = async () => {
@@ -24,7 +25,6 @@ export default function () {
       .from("histori_fermentasi")
       .select("*")
       .limit(1)
-      .eq("selesai", false)
       .order("created_at", { ascending: false });
 
     if (!!data) {
@@ -35,7 +35,7 @@ export default function () {
   const getLamaFermentasi = async () => {
     const { data: dataAwals } = await supabase
       .from("kondisi_tapai")
-      .select("created_time")
+      .select("*")
       .limit(1)
       .order("created_time", { ascending: true });
 
@@ -51,11 +51,11 @@ export default function () {
 
     let lama = 0;
 
-    console.log(dataAwals);
-
     if (dataAwals?.length) {
       const dataAwal: CData = dataAwals![0];
       const dataAkhir: CData = dataAkhirs![0];
+
+      setWaktuAwal(dataAwal.created_time);
 
       lama = dataAkhir.created_time - dataAwal.created_time;
     }
@@ -261,42 +261,34 @@ export default function () {
       }
     >
       <div class="space-y-5">
-        <Show when={!kadarGas()}>
-          <div class="bg-white rounded p-5 shadow">Data tidak terdeteksi</div>
-          <div class="bg-white rounded p-5 shadow flex items-center justify-center">
-            <img
-              src="https://www.islandofworldpeace.ie/wp-content/uploads/2019/03/no-image.jpg"
-              alt=""
-              class="w-[300px] h-[300px]"
-            />
-          </div>
-        </Show>
         <div class={"space-y-5" + (kadarGas().length > 0 ? "" : "hidden")}>
-          <div class="mb-5">
-            <div
-              class={
-                (lastHistori()?.selesai == false
-                  ? lastHistori()?.berhasil
-                    ? "bg-green-500"
-                    : "bg-red-500"
-                  : "bg-orange-500") + " rounded shadow text-white p-8"
-              }
-            >
-              <div class="text-3xl">
-                Status Fermentasi:{" "}
-                <span class="font-semibold">
-                  {lastHistori()?.selesai == false
+          <Show when={!!lastHistori()}>
+            <div class="mb-5">
+              <div
+                class={
+                  (waktuAwal()! <= lastHistori()!.waktu_akhir
                     ? lastHistori()?.berhasil
-                      ? "Matang"
-                      : "Gagal"
-                    : "Menunggu"}
-                </span>
-              </div>
-              <div class="mt-1">
-                <div class="text-base">Waktu Berlalu : {lamaJam()} jam</div>
+                      ? "bg-green-500"
+                      : "bg-red-500"
+                    : "bg-orange-500") + " rounded shadow text-white p-8"
+                }
+              >
+                <div class="text-3xl">
+                  Status Fermentasi:{" "}
+                  <span class="font-semibold">
+                    {waktuAwal()! <= lastHistori()!.waktu_akhir
+                      ? lastHistori()?.berhasil
+                        ? "Matang"
+                        : "Gagal"
+                      : "Menunggu"}
+                  </span>
+                </div>
+                <div class="mt-1">
+                  <div class="text-base">Waktu Berlalu : {lamaJam()} jam</div>
+                </div>
               </div>
             </div>
-          </div>
+          </Show>
 
           <div class="bg-white rounded p-5 shadow mb-5">
             Terjadi kesalahan dan ingin membatalkan fermentasi? Klik di{" "}
