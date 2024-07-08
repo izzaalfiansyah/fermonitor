@@ -279,7 +279,7 @@ export default function () {
                   ? lastHistori()?.berhasil
                     ? "bg-green-500"
                     : "bg-red-500"
-                  : "bg-orange-500") + " rounded shadow text-white p-10"
+                  : "bg-orange-500") + " rounded shadow text-white p-8"
               }
             >
               <div class="text-3xl">

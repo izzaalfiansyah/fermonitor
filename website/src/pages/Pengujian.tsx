@@ -8,16 +8,23 @@ import { Chart, registerables } from "chart.js";
 export default function () {
   let canvas: any;
   const [items, setItems] = createSignal<KondisiTapai[]>([]);
-  const [labels, setLabels] = createSignal<any>([]);
 
   const getData = async () => {
     const { data } = await supabase
       .from("kondisi_tapai")
       .select("*")
       // .eq("pengujian", true)
-      .order("created_time", { ascending: false });
+      .order("created_time", { ascending: true });
 
     setItems(data as KondisiTapai[]);
+  };
+
+  const getLamaJam = (created_time: number) => {
+    const epochTimeAwal = items()[0].created_time;
+    let lamaJam = created_time - epochTimeAwal;
+    lamaJam = Math.round(lamaJam / 3600);
+
+    return lamaJam;
   };
 
   const renderChart = async () => {
@@ -27,15 +34,14 @@ export default function () {
     let jam: any[] = [];
     let i = 0;
     let j = 0;
+    items().forEach((item) => {
+      const lamaJam = getLamaJam(item.created_time);
 
-    const epochTimeAwal = items()[items().length - 1].created_time;
-    items()
-      .reverse()
-      .forEach((item) => {
-        const lamaJam = item.created_time - epochTimeAwal;
-        jam.push(Math.round(lamaJam / 3600));
+      if (lamaJam % 6 == 0) {
+        jam.push(lamaJam);
         kadarAktual.push(item.kadar_gas);
-      });
+      }
+    });
 
     while (i <= 72) {
       const jamPengujian = jam[j];
@@ -55,8 +61,6 @@ export default function () {
 
       j += 1;
     }
-
-    setLabels(labels);
 
     new Chart(canvas, {
       type: "line",
@@ -80,6 +84,10 @@ export default function () {
         ],
       },
       options: {
+        interaction: {
+          intersect: false,
+          mode: "index",
+        },
         responsive: true,
         scales: {
           x: {
@@ -96,6 +104,28 @@ export default function () {
             },
             min: 0,
             max: 10,
+            ticks: {
+              callback: (val) => {
+                return val + "%";
+              },
+            },
+          },
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              title(_) {
+                return "";
+              },
+              label(tooltipItem) {
+                return (
+                  tooltipItem.dataset.label +
+                  ": " +
+                  tooltipItem.parsed.y.toFixed(2) +
+                  "%"
+                );
+              },
+            },
           },
         },
       },
@@ -124,8 +154,10 @@ export default function () {
         class="bg-white rounded shadow p-5"
         classList={{ hidden: items().length < 1 }}
       >
-        <canvas ref={canvas} style={{ "max-height": "300px" }}></canvas>
-        <div class="text-sm text-center">Jam Ke-</div>
+        <canvas ref={canvas} style={{ "max-height": "400px" }}></canvas>
+        <div class="text-sm text-center" style={{ "font-family": "Arial" }}>
+          Jam Ke-
+        </div>
       </div>
       <div class="bg-white rounded shadow p-5">
         <Table
@@ -138,10 +170,10 @@ export default function () {
             "Suhu",
             "Kelembaban",
           ]}
-          items={items().map((item, i) => [
+          items={items().map((item) => [
             getDates(item.created_time),
             getTimes(item.created_time).slice(0, 5),
-            labels()[i],
+            getLamaJam(item.created_time),
             item.kadar_gas.toString().slice(0, 4) + " %",
             item.suhu.toString().slice(0, 4) + " C",
             item.kelembaban.toString().slice(0, 4) + " %",
