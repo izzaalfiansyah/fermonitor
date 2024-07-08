@@ -106,9 +106,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
   };
 
   const checkStatusDevice = async () => {
-    await getLastHistori();
-
-    if (!lastHistori()) {
+    if (pengaturan()?.running) {
       const lastData1: any = await new Promise(async (res) => {
         const { data } = await supabase
           .from("realtime_data")
@@ -141,6 +139,8 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
       //   .order("created_time", { ascending: false })
       //   .limit(1);
 
+      console.log(lastData1![0], lastData2![0]);
+
       if (lastData1![0] == lastData2![0]) {
         alert("Device offline!");
       } else if (lastData1![0].created_time == lastData2![0].created_time) {
@@ -161,6 +161,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
         }
       } else {
         setCanNavigate(true);
+        await getLastHistori();
         await checkStatusDevice();
         await checkPengaturan();
       }
@@ -169,7 +170,6 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
 
   const turnOffBuzzer = async () => {
     await supabase.from("pengaturan").update({ buzzer_on: false }).eq("id", 1);
-    await checkPengaturan();
   };
 
   const toggleSidebar = () => {
