@@ -288,18 +288,19 @@ export default function () {
                 </div>
               </div>
             </div>
+            <Show when={waktuAwal()! > lastHistori()!.waktu_akhir}>
+              <div class="bg-white rounded p-5 shadow mb-5">
+                Terjadi kesalahan dan ingin membatalkan fermentasi? Klik di{" "}
+                <a
+                  href="javascript:void(0);"
+                  class="text-blue-500"
+                  onClick={cancelFermentasi}
+                >
+                  sini
+                </a>
+              </div>
+            </Show>
           </Show>
-
-          <div class="bg-white rounded p-5 shadow mb-5">
-            Terjadi kesalahan dan ingin membatalkan fermentasi? Klik di{" "}
-            <a
-              href="javascript:void(0);"
-              class="text-blue-500"
-              onClick={cancelFermentasi}
-            >
-              sini
-            </a>
-          </div>
 
           <div class="grid lg:grid-cols-2 grow gap-5 mb-5">
             <div class="bg-white rounded shadow min-h-24 flex flex-row items-center gap-5 p-5">

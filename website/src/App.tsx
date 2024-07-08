@@ -1,5 +1,5 @@
 import { A, useLocation, useNavigate } from "@solidjs/router";
-import { createSignal, For, JSX, Match, onMount, Switch } from "solid-js";
+import { createSignal, For, JSX, Match, onMount, Show, Switch } from "solid-js";
 import SettingIcon from "./icons/SettingIcon";
 import HomeIcon from "./icons/HomeIcon";
 import ArchiveIcon from "./icons/ArchiveIcon";
@@ -61,19 +61,25 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
   };
 
   const fermentasiSelesai = async () => {
-    // await supabase.from("pengaturan").update({ running: false }).eq("id", 1);
-    await supabase.from("kondisi_tapai").delete().neq("id", "0");
-    await supabase
-      .from("realtime_data")
-      .update({
-        kadar_gas: 0,
-        kelembaban: 0,
-        suhu: 0,
-        created_time: 0,
-      })
-      .eq("id", 1);
+    const isOk = confirm(
+      "Sistem akan melakukan reset untuk memulai proses fermentasi baru! Lanjutkan?"
+    );
 
-    setLastHistori(null);
+    if (isOk) {
+      await supabase.from("pengaturan").update({ running: false }).eq("id", 1);
+      await supabase.from("kondisi_tapai").delete().neq("id", "0");
+      await supabase
+        .from("realtime_data")
+        .update({
+          kadar_gas: 0,
+          kelembaban: 0,
+          suhu: 0,
+          created_time: 0,
+        })
+        .eq("id", 1);
+
+      window.location.reload();
+    }
   };
 
   const saveHistori = async () => {
@@ -90,8 +96,6 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
         rentang_suhu,
       })
       .eq("id", lastHistori()?.id);
-
-    await fermentasiSelesai();
   };
 
   const noSaveHistori = async () => {
@@ -99,8 +103,6 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
       .from("histori_fermentasi")
       .delete()
       .eq("id", lastHistori()?.id);
-
-    await fermentasiSelesai();
   };
 
   const checkStatusDevice = async () => {
@@ -180,7 +182,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
 
   return (
     <div class="min-h-screen bg-gray-50 flex flex-col text-gray-700">
-      <nav class="sticky top-0 left-0 right-0 z-20 bg-white w-full flex items-center justify-between h-[70px] shadow px-5">
+      <nav class="sticky top-0 left-0 right-0 z-20 bg-white w-full flex items-center justify-between h-20 shadow px-5">
         <button type="button" onClick={toggleSidebar} class="lg:hidden">
           <BarsIcon class="w-6 h-6" />
         </button>
@@ -195,7 +197,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
       </nav>
       <div class="grow relative">
         <div
-          class="absolute top-0 left-0 lg:block w-72 bg-white shadow h-full px-8 transform lg:translate-x-0 -translate-x-[100%] transition"
+          class="fixed top-0 pt-20 left-0 w-72 bg-white shadow h-full px-8 transform lg:translate-x-0 -translate-x-[100%] transition flex flex-col justify-between"
           classList={{ "!translate-x-0": showSidebar() }}
         >
           <div class="mt-10">
@@ -217,6 +219,15 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
               )}
             </For>
           </div>
+          <Show when={pengaturan()?.running}>
+            <button
+              type="button"
+              onClick={fermentasiSelesai}
+              class="bg-red-500 text-white w-full p-3 rounded mb-10"
+            >
+              RESET SISTEM
+            </button>
+          </Show>
         </div>
         <div class="p-5 lg:ml-72 transition">{props.children}</div>
       </div>
@@ -253,7 +264,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
                   Tutup
                 </button>
                 <button
-                  class="bg-red-400 text-white px-5 py-2 uppercase rounded"
+                  class="bg-blue-500 text-white px-5 py-2 uppercase rounded"
                   onClick={saveHistori}
                 >
                   Simpan
