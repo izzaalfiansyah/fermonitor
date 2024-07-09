@@ -89,11 +89,54 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
 
     const rentang_suhu = auto ? suhu_min + " - " + suhu_max : "-";
 
+    const { data } = await supabase
+      .from("kondisi_tapai")
+      .select("kadar_gas, created_time")
+      .order("created_time");
+
+    let perubahan_komposisi: any[] = [];
+
+    if (data) {
+      const waktuAwal: number = data![0].created_time;
+      const dataAkhir = data[data.length - 1];
+
+      data.forEach((item) => {
+        const jam_ke = Math.round((item.created_time - waktuAwal) / 3600);
+        const lastIndex = perubahan_komposisi.length - 1;
+        const lastKomposisi = perubahan_komposisi[lastIndex];
+        if (jam_ke % 6 == 0) {
+          if (lastKomposisi?.jam_ke == jam_ke) {
+            perubahan_komposisi[lastIndex].kadar_gas = item.kadar_gas;
+          } else {
+            perubahan_komposisi.push({
+              kadar_gas: item.kadar_gas,
+              jam_ke,
+            });
+          }
+        }
+      });
+
+      const jam_akhir = Math.round((dataAkhir.created_time - waktuAwal) / 3600);
+
+      if (
+        perubahan_komposisi[perubahan_komposisi.length - 1]?.jam_ke == jam_akhir
+      ) {
+        perubahan_komposisi[perubahan_komposisi.length - 1].kadar_gas =
+          dataAkhir.kadar_gas;
+      } else {
+        perubahan_komposisi.push({
+          kadar_gas: dataAkhir.kadar_gas,
+          jam_ke: jam_akhir,
+        });
+      }
+    }
+
     await supabase
       .from("histori_fermentasi")
       .update({
         selesai: true,
         rentang_suhu,
+        perubahan_komposisi,
       })
       .eq("id", lastHistori()?.id);
 
