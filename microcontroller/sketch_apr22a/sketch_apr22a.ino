@@ -368,8 +368,6 @@ void runFermentasi() {
   if (isnan(kelembaban)) {
     kelembaban = 0;
   }
-
-  Serial.println("tick : " + String(tickDiffSecond));
   
   if (tickDiffSecond == 1) {
     // menampilkan kadar gas pada LCD
@@ -472,13 +470,13 @@ void runFermentasi() {
 
       getDebugging();
 
-      String dataHistoriJson = db.from("histori_fermentasi").select("*").order("created_at", "desc", true).limit(1).doSelect();
-      JSONVar dataHistori = JSON.parse(dataHistoriJson);
-      bool statusHistoriTerakhir = dataHistori[0]["selesai"];
-      int waktuAkhirHistori = dataHistori[0]["waktu_akhir"];
-      int waktuAwal = dataPengujianAwal["created_time"];
-
       if (dataPengujian.length() > 0) {
+        String dataHistoriJson = db.from("histori_fermentasi").select("*").order("created_at", "desc", true).limit(1).doSelect();
+        JSONVar dataHistori = JSON.parse(dataHistoriJson);
+        
+        int waktuAkhirHistori = dataHistori[0]["waktu_akhir"];
+        int waktuAwal = dataPengujianAwal["created_time"];
+
         if (waktuAwal <= waktuAkhirHistori) {
           bool historiTerakhirBerhasil = (bool) dataHistori[0]["berhasil"];
 
@@ -488,8 +486,11 @@ void runFermentasi() {
             status = "Gagal";
           }
         } else {
+          status = "Menunggu";
           cekKematangan();
         }
+
+        Serial.println("Status : " + status);
       }
 
       insertKondisiTapai();

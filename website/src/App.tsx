@@ -254,19 +254,19 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
                   gas selama fermentasi.
                 </li>
               </ul>
-              Simpan hasil fermentasi ke histori?
+              Hasil fermentasi akan di simpan ke histori.
               <div class="mt-8 flex space-x-3 justify-end">
-                <button
+                {/* <button
                   class="bg-gray-400 text-white px-5 py-2 uppercase rounded"
                   onClick={noSaveHistori}
                 >
                   Tutup
-                </button>
+                </button> */}
                 <button
                   class="bg-blue-500 text-white px-5 py-2 uppercase rounded"
                   onClick={saveHistori}
                 >
-                  Simpan
+                  OK
                 </button>
               </div>
             </div>
