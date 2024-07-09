@@ -5,7 +5,7 @@ import supabase from "../utils/supabase";
 import { getDates } from "../utils/dates";
 import TrashIcon from "../icons/TrashIcon";
 import { KondisiTapai } from "../types/KondisiTapai";
-import RefreshIcon from "../icons/RefreshIcon";
+import ClockIcon from "../icons/ClockIcon";
 
 export default function () {
   const [items, setItems] = createSignal<Histori[]>([]);
@@ -49,8 +49,8 @@ export default function () {
         <p class="text-sm">
           Menampilkan hasil fermentasi yang telah dilakukan.
         </p>
-        <div class="flex space-x-3 text-sm items-center mt-5">
-          <RefreshIcon class="text-blue-500 w-6 h-6 animate-spin" />{" "}
+        <div class="flex text-sm items-center mt-5">
+          <ClockIcon class="text-blue-500 w-6 h-6 mr-1" />
           <div>: Proses sedang berlangsung</div>
         </div>
         <Table
@@ -75,7 +75,7 @@ export default function () {
             </span>,
             !!dataPengujianAwal() &&
             dataPengujianAwal()!.created_time <= item.waktu_akhir ? (
-              <RefreshIcon class="text-blue-500 w-6 h-6 animate-spin" />
+              <ClockIcon class="text-blue-500 w-6 h-6" />
             ) : (
               <button
                 type="button"
