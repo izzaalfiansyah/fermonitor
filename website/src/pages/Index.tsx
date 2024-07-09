@@ -309,7 +309,7 @@ export default function () {
               </div>
               <div>
                 <div class="text-base">Temperatur</div>
-                <div class="text-3xl mt-2">{suhu().toFixed(2)} C</div>
+                <div class="text-3xl mt-2">{suhu().toFixed(1)} C</div>
               </div>
             </div>
             <div class="bg-white rounded shadow min-h-24 flex flex-row items-center gap-5 p-5">
@@ -318,9 +318,7 @@ export default function () {
               </div>
               <div>
                 <div class="text-base">Kelembaban</div>
-                <div class="text-3xl mt-2">
-                  {kelembaban().toString().slice(0, 4)} %
-                </div>
+                <div class="text-3xl mt-2">{kelembaban().toFixed(1)} %</div>
               </div>
             </div>
           </div>

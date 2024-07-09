@@ -174,9 +174,9 @@ export default function () {
             getDates(item.created_time),
             getTimes(item.created_time).slice(0, 5),
             getLamaJam(item.created_time),
-            item.kadar_gas.toString().slice(0, 4) + " %",
-            item.suhu.toString().slice(0, 4) + " C",
-            item.kelembaban.toString().slice(0, 4) + " %",
+            item.kadar_gas.toFixed(1) + " %",
+            item.suhu.toFixed(1) + " C",
+            item.kelembaban.toFixed(1) + " %",
           ])}
         ></Table>
       </div>
