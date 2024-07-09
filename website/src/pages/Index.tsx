@@ -80,7 +80,7 @@ export default function () {
 
       data.forEach((item) => {
         setKadarGas((val) => {
-          val.push(item.kadar_gas.toString().slice(0, 4));
+          val.push(item.kadar_gas);
           return val;
         });
 
@@ -177,7 +177,7 @@ export default function () {
             tooltip: {
               callbacks: {
                 label(tooltipItem) {
-                  return "Kadar Gas: " + tooltipItem.parsed.y + "%";
+                  return "Kadar Gas: " + tooltipItem.parsed.y.toFixed(2) + "%";
                 },
               },
             },

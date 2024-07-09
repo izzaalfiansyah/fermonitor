@@ -329,6 +329,7 @@ void loop(){
         if (tickDiffSecond == (order / 4.0 * 4)) {
           lcd.clear();
           lcd.setCursor(cursorPositions[i][0], cursorPositions[i][1]);
+          lcd.print("Aku siap!");
         }
       }
     }
@@ -477,16 +478,18 @@ void runFermentasi() {
       int waktuAkhirHistori = dataHistori[0]["waktu_akhir"];
       int waktuAwal = dataPengujianAwal["created_time"];
 
-      if (waktuAwal <= waktuAkhirHistori) {
-        bool historiTerakhirBerhasil = (bool) dataHistori[0]["berhasil"];
+      if (dataPengujian.length() > 0) {
+        if (waktuAwal <= waktuAkhirHistori) {
+          bool historiTerakhirBerhasil = (bool) dataHistori[0]["berhasil"];
 
-        if (historiTerakhirBerhasil) {
-          status = "Matang";
+          if (historiTerakhirBerhasil) {
+            status = "Matang";
+          } else {
+            status = "Gagal";
+          }
         } else {
-          status = "Gagal";
+          cekKematangan();
         }
-      } else {
-        cekKematangan();
       }
 
       insertKondisiTapai();

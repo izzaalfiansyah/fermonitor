@@ -139,8 +139,6 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
       //   .order("created_time", { ascending: false })
       //   .limit(1);
 
-      console.log(lastData1![0], lastData2![0]);
-
       if (lastData1![0] == lastData2![0]) {
         alert("Device offline!");
       } else if (lastData1![0].created_time == lastData2![0].created_time) {
