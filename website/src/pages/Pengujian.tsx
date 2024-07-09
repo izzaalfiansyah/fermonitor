@@ -51,7 +51,7 @@ export default function () {
 
       kadarRegresi.push(nilaiRegresi - nilaiRegresiPertiga);
 
-      if (jamPengujian) {
+      if (typeof jamPengujian == "number") {
         labels.push(jamPengujian.toString());
         i = jamPengujian + 6;
       } else {

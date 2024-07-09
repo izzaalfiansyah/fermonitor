@@ -98,12 +98,12 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
       .eq("id", lastHistori()?.id);
   };
 
-  const noSaveHistori = async () => {
-    await supabase
-      .from("histori_fermentasi")
-      .delete()
-      .eq("id", lastHistori()?.id);
-  };
+  // const noSaveHistori = async () => {
+  //   await supabase
+  //     .from("histori_fermentasi")
+  //     .delete()
+  //     .eq("id", lastHistori()?.id);
+  // };
 
   const checkStatusDevice = async () => {
     if (pengaturan()?.running) {
