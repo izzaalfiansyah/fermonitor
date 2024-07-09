@@ -676,7 +676,7 @@ void insertHistory(bool berhasil = true) {
     String jsonReqSet = JSON.stringify(reqSet);
 
     db.insert("histori_fermentasi", json, false);
-    db.from("pengaturan").eq("id", "1").doUpdate(jsonSett);
+    db.from("pengaturan").eq("id", "1").doUpdate(jsonReqSet);
     callUser(berhasil);
 
     pengujian = true;
