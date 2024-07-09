@@ -347,7 +347,7 @@ void loop(){
     tickOld = tickNow;
   }
 
-  delay(1000);
+  delay(500);
 }
 
 void runFermentasi() {
@@ -367,8 +367,10 @@ void runFermentasi() {
   if (isnan(kelembaban)) {
     kelembaban = 0;
   }
+
+  Serial.println("tick : " + String(tickDiffSecond));
   
-  if (tickDiffSecond == 0) {
+  if (tickDiffSecond == 1) {
     // menampilkan kadar gas pada LCD
     lcd.clear();
     lcd.setCursor(0, 0);
@@ -378,7 +380,7 @@ void runFermentasi() {
     lcd.setCursor(0,1);
     lcd.print("H : ");
     lcd.print(status);
-  } else if (tickDiffSecond == 2) {
+  } else if (tickDiffSecond == 3) {
     // menampilkan suhu dan kelembaban pada LCD
     lcd.clear();
     lcd.setCursor(0, 0);
