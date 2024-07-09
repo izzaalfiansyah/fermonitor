@@ -670,13 +670,12 @@ void insertHistory(bool berhasil = true) {
 
     String json = JSON.stringify(req);
 
-    JSONVar sett;
-    req["buzzer_on"] = true;
+    JSONVar reqSet;
+    reqSet["buzzer_on"] = false;
 
-    String jsonSett = JSON.stringify(sett);
+    String jsonReqSet = JSON.stringify(reqSet);
 
-    db.insert("histori_fermentasi", json, false);
-    db.from("pengaturan").eq("id", "1").doUpdate(jsonSett);
+    db.from("pengaturan").eq("id", "1").doUpdate(jsonReqSet);
     callUser(berhasil);
 
     pengujian = true;
