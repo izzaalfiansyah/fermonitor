@@ -1,3 +1,8 @@
+export type PerubahanKomposisi = {
+    kadar_gas: number;
+    jam_ke: number;
+};
+
 export interface Histori {
     id: number;
     waktu_awal: number;
@@ -6,4 +11,5 @@ export interface Histori {
     berhasil: boolean;
     created_at: string;
     selesai: boolean;
+    perubahan_komposisi: PerubahanKomposisi[];
 }

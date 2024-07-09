@@ -111,7 +111,7 @@ export default function () {
             display: true,
             title: {
               display: true,
-              text: "Nilai",
+              text: "Kadar Gas Alkohol",
             },
             min: 0,
             max: 10,
