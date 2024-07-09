@@ -96,6 +96,8 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
         rentang_suhu,
       })
       .eq("id", lastHistori()?.id);
+
+    await getLastHistori();
   };
 
   // const noSaveHistori = async () => {
