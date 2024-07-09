@@ -168,6 +168,7 @@ export default function (props: JSX.HTMLAttributes<HTMLDivElement>) {
 
   const turnOffBuzzer = async () => {
     await supabase.from("pengaturan").update({ buzzer_on: false }).eq("id", 1);
+    await checkPengaturan();
   };
 
   const toggleSidebar = () => {
