@@ -27,6 +27,13 @@ export default function () {
     return lamaJam;
   };
 
+  const getKadarGasRegresi = (jam: number) => {
+    const nilaiRegresi = (-0.000006 * jam ** 2 + 0.0013 * jam + 0.002) * 100;
+    const nilaiRegresiPertiga = nilaiRegresi / 3;
+
+    return nilaiRegresi - nilaiRegresiPertiga;
+  };
+
   const renderChart = async () => {
     let labels = [];
     let kadarRegresi = [];
@@ -38,18 +45,22 @@ export default function () {
       const lamaJam = getLamaJam(item.created_time);
 
       if (lamaJam % 6 == 0) {
-        jam.push(lamaJam);
-        kadarAktual.push(item.kadar_gas);
+        const index = jam.indexOf(lamaJam);
+
+        if (index >= 0) {
+          kadarAktual[index] = item.kadar_gas;
+        } else {
+          jam.push(lamaJam);
+          kadarAktual.push(item.kadar_gas);
+        }
       }
     });
 
     while (i <= 72) {
       const jamPengujian = jam[j];
       const x = jamPengujian || i;
-      const nilaiRegresi = (-0.000006 * x ** 2 + 0.0013 * x + 0.002) * 100;
-      const nilaiRegresiPertiga = nilaiRegresi / 3;
 
-      kadarRegresi.push(nilaiRegresi - nilaiRegresiPertiga);
+      kadarRegresi.push(getKadarGasRegresi(x));
 
       if (typeof jamPengujian == "number") {
         labels.push(jamPengujian.toString());
@@ -169,15 +180,25 @@ export default function () {
             "Kadar Gas",
             "Suhu",
             "Kelembaban",
+            "Status",
           ]}
-          items={items().map((item) => [
-            getDates(item.created_time),
-            getTimes(item.created_time).slice(0, 5),
-            getLamaJam(item.created_time),
-            item.kadar_gas.toFixed(1) + " %",
-            item.suhu.toFixed(1) + " C",
-            item.kelembaban.toFixed(1) + " %",
-          ])}
+          items={items().map((item) => {
+            const jamKe = getLamaJam(item.created_time);
+
+            return [
+              getDates(item.created_time),
+              getTimes(item.created_time).slice(0, 8),
+              jamKe,
+              item.kadar_gas.toFixed(1) + " %",
+              item.suhu.toFixed(1) + " C",
+              item.kelembaban.toFixed(1) + " %",
+              item.kadar_gas > 5.28
+                ? "Matang"
+                : item.kadar_gas < getKadarGasRegresi(jamKe) && jamKe >= 18
+                ? "Gagal"
+                : "Menunggu",
+            ];
+          })}
         ></Table>
       </div>
     </div>
